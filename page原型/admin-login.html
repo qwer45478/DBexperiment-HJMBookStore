@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈籍迷管理后台 - 登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        }
+        .admin-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <!-- 背景装饰 -->
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full opacity-10"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full opacity-10"></div>
+    </div>
+
+    <!-- 登录卡片 -->
+    <div class="admin-card rounded-3xl shadow-2xl w-full max-w-md p-8 relative z-10">
+        <!-- Logo区域 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-2xl mb-4">
+                <i class="fas fa-shield-alt text-white text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">哈籍迷管理后台</h1>
+            <p class="text-gray-600 mt-2">管理员登录系统</p>
+        </div>
+
+        <!-- 登录表单 -->
+        <form class="space-y-6">
+            <div class="relative">
+                <i class="fas fa-id-badge absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="管理员ID" 
+                    class="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg">
+            </div>
+            <div class="relative">
+                <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" placeholder="管理员密码" 
+                    class="w-full pl-12 pr-4 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg">
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center">
+                    <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                    <span class="ml-2 text-sm text-gray-600">记住登录状态</span>
+                </label>
+                <a href="#" class="text-sm text-blue-600 hover:text-blue-800">忘记密码？</a>
+            </div>
+            <button type="submit" 
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-500 text-white font-medium rounded-xl hover:from-blue-700 hover:to-indigo-600 transition-all duration-300 transform hover:scale-[1.02] text-lg">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                登录管理后台
+            </button>
+        </form>
+
+        <!-- 安全提示 -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-xl">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-blue-600 mt-0.5 mr-2"></i>
+                <div class="text-sm text-blue-600">
+                    <p class="font-medium mb-1">安全提示</p>
+                    <p>请使用管理员账号和密码登录，确保信息安全</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部信息 -->
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>© 2024 哈籍迷书城 - 管理后台系统 v1.0</p>
+            <p class="mt-1">技术支持：系统开发团队</p>
+        </div>
+    </div>
+
+    <script>
+        // 表单提交处理
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 这里添加管理员登录逻辑
+            console.log('管理员登录');
+        });
+    </script>
+</body>
+</html>

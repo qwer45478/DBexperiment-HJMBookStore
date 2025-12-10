@@ -1,0 +1,99 @@
+=====================================
+哈籍迷书城购物系统 - 快速启动指南
+=====================================
+
+【重要】请按照以下步骤依次执行：
+
+第一步：初始化数据库
+-------------------------------------
+1. 确保MySQL已安装并运行
+2. 打开MySQL命令行或MySQL Workbench
+3. 执行以下命令：
+
+   方式一（命令行）：
+   mysql -u root -p
+   输入密码：123456
+   source C:/Users/hyy12138/Desktop/HJM_book/database/schema.sql
+
+   方式二（MySQL Workbench）：
+   打开 database/schema.sql 文件并执行
+
+4. 验证数据库创建成功：
+   USE book_store_database;
+   SHOW TABLES;
+
+第二步：启动后端服务
+-------------------------------------
+1. 打开命令行（CMD或PowerShell）
+2. 进入后端目录：
+   cd C:\Users\hyy12138\Desktop\HJM_book\back-end
+
+3. 首次运行需要安装依赖：
+   mvn clean install
+
+4. 启动后端：
+   mvn spring-boot:run
+
+5. 等待启动完成，看到 "Started BookstoreApplication" 即表示成功
+6. 后端地址：http://localhost:8080/api
+
+第三步：启动前端服务
+-------------------------------------
+1. 打开新的命令行窗口
+2. 进入前端目录：
+   cd C:\Users\hyy12138\Desktop\HJM_book\front-end
+
+3. 首次运行需要安装依赖：
+   npm install
+   
+   如果速度慢，使用国内镜像：
+   npm config set registry https://registry.npmmirror.com
+   npm install
+
+4. 启动前端：
+   npm run dev
+
+5. 看到 "Local: http://localhost:5173/" 即表示成功
+6. 打开浏览器访问：http://localhost:5173
+
+第四步：登录测试
+-------------------------------------
+管理员登录：
+- 管理员ID：admin001
+- 密码：admin123
+
+用户注册：
+- 用户名：任意（不超过16个字符）
+- 手机号：11位手机号（如：13800138000）
+- 密码：字母+数字，6-24位（如：abc123）
+
+常见问题解决
+-------------------------------------
+1. 数据库连接失败
+   - 检查MySQL是否启动
+   - 确认用户名密码：root/123456
+   - 检查端口：3306
+
+2. 端口被占用
+   - 后端8080被占用：修改 application.yml 中的 server.port
+   - 前端5173被占用：修改 vite.config.js 中的 server.port
+
+3. Maven下载慢
+   - 配置阿里云镜像（见 DEPLOYMENT_GUIDE.md）
+
+4. npm安装失败
+   - 清除缓存：npm cache clean --force
+   - 使用镜像：npm config set registry https://registry.npmmirror.com
+
+技术支持
+-------------------------------------
+详细文档请查看：
+- README.md - 项目总体说明
+- DEPLOYMENT_GUIDE.md - 详细部署指南
+
+项目结构：
+- back-end/ - 后端SpringBoot项目
+- front-end/ - 前端Vue3项目
+- database/ - 数据库脚本
+
+祝使用愉快！

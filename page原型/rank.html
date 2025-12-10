@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈籍迷 - 排行榜</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .rank-card {
+            transition: all 0.3s ease;
+        }
+        .rank-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #808080); }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #8B4513); }
+        .rank-other { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 导航栏 -->
+    <nav class="glass-effect sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <div class="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-500 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-book-open text-white"></i>
+                        </div>
+                        <span class="ml-3 text-xl font-bold text-gray-800">哈籍迷</span>
+                    </div>
+                    <div class="hidden md:block ml-10">
+                        <div class="flex items-baseline space-x-4">
+                            <a href="#" class="text-gray-600 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">首页</a>
+                            <a href="#" class="text-purple-600 px-3 py-2 rounded-md text-sm font-medium">排行榜</a>
+                            <a href="#" class="text-gray-600 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium">分类</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <input type="text" placeholder="搜索书籍..." 
+                            class="w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button class="relative p-2 text-gray-600 hover:text-purple-600">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                    </button>
+                    <button class="flex items-center space-x-2 text-gray-600 hover:text-purple-600">
+                        <img src="https://picsum.photos/seed/user123/40/40.jpg" alt="用户头像" class="w-8 h-8 rounded-full">
+                        <span class="text-sm">用户123</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 页面标题 -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                图书排行榜
+            </h1>
+            <p class="text-gray-600">发现最受欢迎的优质图书</p>
+        </div>
+
+        <!-- 排行榜网格 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- 评分榜 -->
+            <section class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-star text-yellow-500 mr-2"></i>
+                        评分榜
+                    </h2>
+                    <button class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                        查看全部 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <!-- 排行项目 -->
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-1 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            1
+                        </div>
+                        <img src="https://picsum.photos/seed/rate1/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">红楼梦</h3>
+                            <p class="text-sm text-gray-600">曹雪芹</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 ml-1">5.0分</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥59.9</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            2
+                        </div>
+                        <img src="https://picsum.photos/seed/rate2/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">百年孤独</h3>
+                            <p class="text-sm text-gray-600">马尔克斯</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 ml-1">5.0分</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥39.9</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            3
+                        </div>
+                        <img src="https://picsum.photos/seed/rate3/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">三体</h3>
+                            <p class="text-sm text-gray-600">刘慈欣</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 ml-1">4.8分</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥45.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            4
+                        </div>
+                        <img src="https://picsum.photos/seed/rate4/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">活着</h3>
+                            <p class="text-sm text-gray-600">余华</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 ml-1">4.5分</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥29.9</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            5
+                        </div>
+                        <img src="https://picsum.photos/seed/rate5/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">小王子</h3>
+                            <p class="text-sm text-gray-600">圣埃克苏佩里</p>
+                            <div class="flex items-center mt-1">
+                                <div class="flex text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 ml-1">4.6分</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥22.0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 历史销量榜 -->
+            <section class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-history text-blue-500 mr-2"></i>
+                        历史销量榜
+                    </h2>
+                    <button class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                        查看全部 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-1 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            1
+                        </div>
+                        <img src="https://picsum.photos/seed/sales1/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">人类简史</h3>
+                            <p class="text-sm text-gray-600">尤瓦尔·赫拉利</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-fire text-orange-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">历史销量 15.2万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥68.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            2
+                        </div>
+                        <img src="https://picsum.photos/seed/sales2/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">原则</h3>
+                            <p class="text-sm text-gray-600">瑞·达利欧</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-fire text-orange-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">历史销量 12.8万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥98.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            3
+                        </div>
+                        <img src="https://picsum.photos/seed/sales3/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">围城</h3>
+                            <p class="text-sm text-gray-600">钱钟书</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-fire text-orange-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">历史销量 10.5万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥32.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            4
+                        </div>
+                        <img src="https://picsum.photos/seed/sales4/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">认知觉醒</h3>
+                            <p class="text-sm text-gray-600">周岭</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-fire text-orange-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">历史销量 8.9万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥45.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            5
+                        </div>
+                        <img src="https://picsum.photos/seed/sales5/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">被讨厌的勇气</h3>
+                            <p class="text-sm text-gray-600">岸见一郎</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-fire text-orange-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">历史销量 7.2万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥39.8</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 月销量榜 -->
+            <section class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-chart-line text-green-500 mr-2"></i>
+                        月销量榜
+                    </h2>
+                    <button class="text-purple-600 hover:text-purple-800 text-sm font-medium">
+                        查看全部 <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-1 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            1
+                        </div>
+                        <img src="https://picsum.photos/seed/month1/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">思考，快与慢</h3>
+                            <p class="text-sm text-gray-600">丹尼尔·卡尼曼</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">本月销量 2.3万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥69.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            2
+                        </div>
+                        <img src="https://picsum.photos/seed/month2/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">非暴力沟通</h3>
+                            <p class="text-sm text-gray-600">马歇尔·卢森堡</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">本月销量 1.8万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥36.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-3 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            3
+                        </div>
+                        <img src="https://picsum.photos/seed/month3/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">底层逻辑</h3>
+                            <p class="text-sm text-gray-600">刘润</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">本月销量 1.5万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥78.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            4
+                        </div>
+                        <img src="https://picsum.photos/seed/month4/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">心流</h3>
+                            <p class="text-sm text-gray-600">米哈里·契克森米哈赖</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">本月销量 1.2万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥49.0</span>
+                        </div>
+                    </div>
+
+                    <div class="rank-card flex items-center p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100">
+                        <div class="rank-other w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm mr-3">
+                            5
+                        </div>
+                        <img src="https://picsum.photos/seed/month5/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded-lg object-cover mr-3">
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-800 line-clamp-1">沉默的大多数</h3>
+                            <p class="text-sm text-gray-600">王小波</p>
+                            <div class="flex items-center mt-1">
+                                <i class="fas fa-arrow-up text-green-500 text-xs mr-1"></i>
+                                <span class="text-xs text-gray-500">本月销量 1.0万</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-red-500 font-bold">¥35.0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 底部统计信息 -->
+        <div class="mt-12 bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl p-8 text-white">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <div class="text-3xl font-bold mb-2">10,000+</div>
+                    <div class="text-purple-100">图书种类</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold mb-2">500万+</div>
+                    <div class="text-purple-100">累计用户</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold mb-2">2000万+</div>
+                    <div class="text-purple-100">图书销量</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold mb-2">4.8分</div>
+                    <div class="text-purple-100">平均评分</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部导航 -->
+    <footer class="bg-white border-t border-gray-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-500 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-book-open text-white text-sm"></i>
+                        </div>
+                        <span class="ml-2 text-lg font-bold text-gray-800">哈籍迷</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">专业的图书购物平台，为您提供优质的阅读体验。</p>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">快速链接</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">关于我们</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">联系方式</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">帮助中心</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">服务支持</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">售后服务</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">配送说明</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-purple-600">退换货政策</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-800 mb-3">关注我们</h4>
+                    <div class="flex space-x-3">
+                        <a href="#" class="text-gray-600 hover:text-purple-600">
+                            <i class="fab fa-weixin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-600 hover:text-purple-600">
+                            <i class="fab fa-weibo text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-600 hover:text-purple-600">
+                            <i class="fab fa-qq text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 mt-8 pt-8 text-center text-sm text-gray-600">
+                <p>© 2024 哈籍迷书城. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

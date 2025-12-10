@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈籍迷 - 登录/注册</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="glass-effect rounded-3xl shadow-2xl w-full max-w-md p-8">
+        <!-- Logo区域 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-500 rounded-2xl mb-4">
+                <i class="fas fa-book-open text-white text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800">哈籍迷</h1>
+            <p class="text-gray-600 mt-2">您的专属书城购物平台</p>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="flex mb-6 bg-gray-100 rounded-xl p-1">
+            <button id="loginTab" class="flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-300 tab-active">
+                用户登录
+            </button>
+            <button id="registerTab" class="flex-1 py-3 px-4 rounded-lg font-medium text-gray-600 hover:text-gray-800 transition-all duration-300">
+                注册账号
+            </button>
+            <button id="adminTab" class="flex-1 py-3 px-4 rounded-lg font-medium text-gray-600 hover:text-gray-800 transition-all duration-300">
+                管理员
+            </button>
+        </div>
+
+        <!-- 登录表单 -->
+        <form id="loginForm" class="space-y-4">
+            <div class="relative">
+                <i class="fas fa-phone absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="tel" placeholder="手机号码" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="relative">
+                <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" placeholder="密码" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center">
+                    <input type="checkbox" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                    <span class="ml-2 text-sm text-gray-600">记住我</span>
+                </label>
+                <a href="#" class="text-sm text-purple-600 hover:text-purple-800">忘记密码？</a>
+            </div>
+            <button type="submit" 
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white font-medium rounded-xl hover:from-purple-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-[1.02]">
+                登录
+            </button>
+        </form>
+
+        <!-- 注册表单 -->
+        <form id="registerForm" class="space-y-4 hidden">
+            <div class="relative">
+                <i class="fas fa-user absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="用户名（不超过16字符）" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="relative">
+                <i class="fas fa-phone absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="tel" placeholder="手机号码" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="relative">
+                <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" placeholder="密码（6-24位字母数字）" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="relative">
+                <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" placeholder="确认密码" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="flex items-center">
+                <input type="checkbox" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                <span class="ml-2 text-sm text-gray-600">我同意<a href="#" class="text-purple-600 hover:text-purple-800">用户协议</a>和<a href="#" class="text-purple-600 hover:text-purple-800">隐私政策</a></span>
+            </div>
+            <button type="submit" 
+                class="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white font-medium rounded-xl hover:from-purple-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-[1.02]">
+                注册
+            </button>
+        </form>
+
+        <!-- 管理员登录表单 -->
+        <form id="adminForm" class="space-y-4 hidden">
+            <div class="relative">
+                <i class="fas fa-id-badge absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" placeholder="管理员ID" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <div class="relative">
+                <i class="fas fa-lock absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="password" placeholder="管理员密码" 
+                    class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+            </div>
+            <button type="submit" 
+                class="w-full py-3 bg-gradient-to-r from-red-600 to-orange-500 text-white font-medium rounded-xl hover:from-red-700 hover:to-orange-600 transition-all duration-300 transform hover:scale-[1.02]">
+                管理员登录
+            </button>
+        </form>
+
+        <!-- 底部信息 -->
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>© 2024 哈籍迷书城 - 专业的图书购物平台</p>
+        </div>
+    </div>
+
+    <script>
+        // 标签切换功能
+        const tabs = {
+            loginTab: { form: 'loginForm', tab: 'loginTab' },
+            registerTab: { form: 'registerForm', tab: 'registerTab' },
+            adminTab: { form: 'adminForm', tab: 'adminTab' }
+        };
+
+        Object.keys(tabs).forEach(tabId => {
+            document.getElementById(tabId).addEventListener('click', () => {
+                // 隐藏所有表单
+                document.querySelectorAll('form').forEach(form => form.classList.add('hidden'));
+                // 移除所有标签的激活状态
+                document.querySelectorAll('button[id$="Tab"]').forEach(tab => {
+                    tab.classList.remove('tab-active');
+                    tab.classList.add('text-gray-600');
+                });
+                
+                // 显示选中的表单和激活标签
+                document.getElementById(tabs[tabId].form).classList.remove('hidden');
+                document.getElementById(tabId).classList.add('tab-active');
+                document.getElementById(tabId).classList.remove('text-gray-600');
+            });
+        });
+
+        // 表单提交处理
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 这里添加登录逻辑
+            console.log('用户登录');
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 这里添加注册逻辑
+            console.log('用户注册');
+        });
+
+        document.getElementById('adminForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            // 这里添加管理员登录逻辑
+            console.log('管理员登录');
+        });
+    </script>
+</body>
+</html>

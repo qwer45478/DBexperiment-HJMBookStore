@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>哈籍迷管理后台 - 书籍管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .book-row {
+            transition: all 0.2s ease;
+        }
+        .book-row:hover {
+            background-color: #f9fafb;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- 侧边栏 -->
+    <aside class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-900 to-blue-700 text-white z-40">
+        <div class="p-6">
+            <div class="flex items-center mb-8">
+                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-shield-alt text-white"></i>
+                </div>
+                <span class="ml-3 text-xl font-bold">管理后台</span>
+            </div>
+            <nav class="space-y-2">
+                <a href="#" class="flex items-center space-x-3 p-3 hover:bg-white/10 rounded-lg transition-all">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>数据仪表板</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 bg-white/20 rounded-lg">
+                    <i class="fas fa-book"></i>
+                    <span>书籍管理</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 hover:bg-white/10 rounded-lg transition-all">
+                    <i class="fas fa-image"></i>
+                    <span>首页轮播</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 hover:bg-white/10 rounded-lg transition-all">
+                    <i class="fas fa-users-cog"></i>
+                    <span>管理员管理</span>
+                </a>
+                <a href="#" class="flex items-center space-x-3 p-3 hover:bg-white/10 rounded-lg transition-all">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>数据统计</span>
+                </a>
+            </nav>
+        </div>
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-white/20">
+            <div class="flex items-center space-x-3">
+                <img src="https://picsum.photos/seed/admin/40/40.jpg" alt="管理员" class="w-10 h-10 rounded-full">
+                <div>
+                    <p class="font-medium">管理员</p>
+                    <p class="text-sm text-white/70">等级 2</p>
+                </div>
+            </div>
+            <button class="mt-4 w-full py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-all">
+                <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+            </button>
+        </div>
+    </aside>
+
+    <!-- 主内容区域 -->
+    <main class="ml-64 p-8">
+        <!-- 页面标题 -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">书籍管理</h1>
+            <p class="text-gray-600">管理书籍信息、库存和状态</p>
+        </div>
+
+        <!-- 操作栏 -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
+                        <i class="fas fa-plus mr-2"></i>新增书籍
+                    </button>
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all">
+                        <i class="fas fa-file-excel mr-2"></i>Excel导入
+                    </button>
+                    <button class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all">
+                        <i class="fas fa-file-export mr-2"></i>导出数据
+                    </button>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <input type="text" placeholder="搜索书籍..." 
+                            class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+                    <button class="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-all">
+                        <i class="fas fa-filter mr-2"></i>高级筛选
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">总书籍数</p>
+                        <p class="text-2xl font-bold text-gray-800">10,234</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-book text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">上架书籍</p>
+                        <p class="text-2xl font-bold text-green-600">8,156</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">下架书籍</p>
+                        <p class="text-2xl font-bold text-red-600">1,234</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-times-circle text-red-600"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">库存预警</p>
+                        <p class="text-2xl font-bold text-orange-600">45</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-orange-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 书籍列表 -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-gray-800">书籍列表</h2>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">显示 1-10 条，共 10,234 条</span>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">书籍ID</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">封面</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">书籍信息</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">分类</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">价格</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">库存</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">销量</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">评分</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">状态</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-700">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="book-row border-b border-gray-100">
+                            <td class="py-3 px-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">#10001</td>
+                            <td class="py-3 px-4">
+                                <img src="https://picsum.photos/seed/book10001/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded object-cover">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">三体</h4>
+                                    <p class="text-sm text-gray-600">刘慈欣 著</p>
+                                    <p class="text-xs text-gray-500">重庆出版社</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded">工业技术</span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">¥45.0</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">1,250</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">15,234</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-800 mr-1">4.8</span>
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="status-badge bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>上架
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-orange-600 hover:text-orange-800" title="下架">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="book-row border-b border-gray-100">
+                            <td class="py-3 px-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">#10002</td>
+                            <td class="py-3 px-4">
+                                <img src="https://picsum.photos/seed/book10002/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded object-cover">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">百年孤独</h4>
+                                    <p class="text-sm text-gray-600">马尔克斯 著</p>
+                                    <p class="text-xs text-gray-500">南海出版公司</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded">文学</span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">¥39.9</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">890</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">12,567</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-800 mr-1">5.0</span>
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="status-badge bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>上架
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-orange-600 hover:text-orange-800" title="下架">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="book-row border-b border-gray-100">
+                            <td class="py-3 px-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">#10003</td>
+                            <td class="py-3 px-4">
+                                <img src="https://picsum.photos/seed/book10003/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded object-cover">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">人类简史</h4>
+                                    <p class="text-sm text-gray-600">尤瓦尔·赫拉利 著</p>
+                                    <p class="text-xs text-gray-500">中信出版社</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded">历史</span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">¥68.0</td>
+                            <td class="py-3 px-4 text-sm text-orange-600 font-medium">15</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">8,234</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-800 mr-1">4.6</span>
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="status-badge bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>上架
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-orange-600 hover:text-orange-800" title="下架">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="book-row border-b border-gray-100">
+                            <td class="py-3 px-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">#10004</td>
+                            <td class="py-3 px-4">
+                                <img src="https://picsum.photos/seed/book10004/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded object-cover">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">围城</h4>
+                                    <p class="text-sm text-gray-600">钱钟书 著</p>
+                                    <p class="text-xs text-gray-500">人民文学出版社</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded">文学</span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">¥32.0</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">0</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">5,678</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-800 mr-1">4.2</span>
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="status-badge bg-red-100 text-red-600">
+                                    <i class="fas fa-times-circle mr-1"></i>下架
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-green-600 hover:text-green-800" title="上架">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="book-row border-b border-gray-100">
+                            <td class="py-3 px-4">
+                                <input type="checkbox" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">#10005</td>
+                            <td class="py-3 px-4">
+                                <img src="https://picsum.photos/seed/book10005/60/80.jpg" alt="书籍封面" class="w-12 h-16 rounded object-cover">
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">活着</h4>
+                                    <p class="text-sm text-gray-600">余华 著</p>
+                                    <p class="text-xs text-gray-500">作家出版社</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded">文学</span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-800">¥29.9</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">2,100</td>
+                            <td class="py-3 px-4 text-sm text-gray-800">18,901</td>
+                            <td class="py-3 px-4">
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-800 mr-1">4.5</span>
+                                    <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="status-badge bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>上架
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="flex space-x-2">
+                                    <button class="text-blue-600 hover:text-blue-800" title="编辑">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="text-orange-600 hover:text-orange-800" title="下架">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button class="text-red-600 hover:text-red-800" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-6 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50" disabled>
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="px-3 py-2 bg-blue-600 text-white rounded-lg">1</button>
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">2</button>
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">3</button>
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">...</button>
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">1024</button>
+                        <button class="px-3 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all">
+                            <i class="fas fa-trash-alt mr-2"></i>批量删除
+                        </button>
+                        <button class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all">
+                            <i class="fas fa-eye-slash mr-2"></i>批量下架
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 全选功能
+        document.querySelector('thead input[type="checkbox"]').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    </script>
+</body>
+</html>
