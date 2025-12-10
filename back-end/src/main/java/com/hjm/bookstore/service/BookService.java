@@ -39,6 +39,9 @@ public class BookService {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ScoreService scoreService;
+
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
@@ -46,14 +49,20 @@ public class BookService {
      * 获取所有书籍（包括上架和下架）
      */
     public List<BooksInfo> getAllBooks() {
-        return booksInfoRepository.findAll();
+        List<BooksInfo> books = booksInfoRepository.findAll();
+        return setRealTimeRatingsForBooks(books);
     }
 
     /**
      * 根据ID获取书籍
      */
     public Optional<BooksInfo> getBookById(Integer bookId) {
-        return booksInfoRepository.findById(bookId);
+        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
+        if (bookOpt.isPresent()) {
+            BooksInfo bookWithRealRating = getBookWithRealTimeRating(bookOpt.get());
+            return Optional.of(bookWithRealRating);
+        }
+        return Optional.empty();
     }
 
     /**
@@ -133,7 +142,8 @@ public class BookService {
             }
         }
 
-        return results;
+        // 为搜索结果设置实时评分
+        return setRealTimeRatingsForBooks(results);
     }
 
     /**
@@ -154,7 +164,8 @@ public class BookService {
      * 获取评分排行榜
      */
     public List<BooksInfo> getRatingRanking() {
-        return booksInfoRepository.findTop10ByStatusOrderByRatingDesc(1);
+        List<BooksInfo> books = booksInfoRepository.findTop10ByStatusOrderByRatingDesc(1);
+        return setRealTimeRatingsForBooks(books);
     }
 
     /**
@@ -401,6 +412,56 @@ public class BookService {
      */
     private boolean isBookExists(String bookName, String author, String publisher) {
         return booksInfoRepository.findByBookNameAndAuthorAndPublisher(bookName, author, publisher).isPresent();
+    }
+
+    /**
+     * 获取书籍的实时评分（如果数据库中的评分为0，则从user_score表计算实际评分）
+     */
+    private BooksInfo getBookWithRealTimeRating(BooksInfo book) {
+        if (book != null && (book.getRating() == null || book.getRating().compareTo(BigDecimal.ZERO) == 0)) {
+            // 如果数据库中的评分为0，尝试从user_score表计算实际评分
+            try {
+                Double avgRating = scoreService.getAverageRatingByBookId(book.getBookId());
+                if (avgRating != null && avgRating > 0) {
+                    // 创建新的书籍对象，避免修改数据库中的原始数据
+                    BooksInfo bookWithRealRating = new BooksInfo();
+                    // 复制所有属性
+                    bookWithRealRating.setBookId(book.getBookId());
+                    bookWithRealRating.setBookName(book.getBookName());
+                    bookWithRealRating.setCategory(book.getCategory());
+                    bookWithRealRating.setAuthor(book.getAuthor());
+                    bookWithRealRating.setBookImage(book.getBookImage());
+                    bookWithRealRating.setDescription(book.getDescription());
+                    bookWithRealRating.setPublisher(book.getPublisher());
+                    bookWithRealRating.setPrice(book.getPrice());
+                    bookWithRealRating.setRating(BigDecimal.valueOf(avgRating).setScale(1, BigDecimal.ROUND_HALF_UP));
+                    bookWithRealRating.setStock(book.getStock());
+                    bookWithRealRating.setSales(book.getSales());
+                    bookWithRealRating.setMonthlySales(book.getMonthlySales());
+                    bookWithRealRating.setStatus(book.getStatus());
+                    bookWithRealRating.setCreatedAt(book.getCreatedAt());
+                    bookWithRealRating.setUpdatedAt(book.getUpdatedAt());
+                    
+                    return bookWithRealRating;
+                }
+            } catch (Exception e) {
+                log.warn("计算书籍 {} 的实时评分失败: {}", book.getBookId(), e.getMessage());
+            }
+        }
+        return book;
+    }
+
+    /**
+     * 为书籍列表设置实时评分
+     */
+    private List<BooksInfo> setRealTimeRatingsForBooks(List<BooksInfo> books) {
+        if (books == null || books.isEmpty()) {
+            return books;
+        }
+        
+        return books.stream()
+                .map(this::getBookWithRealTimeRating)
+                .collect(Collectors.toList());
     }
 
     /**
