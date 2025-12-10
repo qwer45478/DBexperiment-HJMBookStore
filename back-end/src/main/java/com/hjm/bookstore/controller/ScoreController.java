@@ -6,7 +6,7 @@ import com.hjm.bookstore.service.ScoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Optional;
 import java.util.Map;
 
 /**
@@ -44,9 +44,13 @@ public class ScoreController {
     @GetMapping("/{userId}/{bookId}")
     public Result<UserScore> getUserScore(@PathVariable Integer userId, @PathVariable Integer bookId) {
         try {
-            return scoreService.getUserScore(userId, bookId)
-                    .map(Result::success)
-                    .orElse(Result.error("未找到评分"));
+            Optional<UserScore> userScore = scoreService.getUserScore(userId, bookId);
+            if (userScore.isPresent()) {
+                return Result.success(userScore.get());
+            } else {
+                // 用户未评分，返回成功但data为null
+                return Result.success(null);
+            }
         } catch (Exception e) {
             log.error("获取评分失败", e);
             return Result.error(e.getMessage());

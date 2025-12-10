@@ -72,6 +72,13 @@ public class ScoreService {
     }
 
     /**
+     * 获取某本书的平均评分（公共方法）
+     */
+    public Double getAverageRatingByBookId(Integer bookId) {
+        return userScoreRepository.getAverageRatingByBookId(bookId);
+    }
+
+    /**
      * 更新书籍平均评分
      */
     @Transactional
