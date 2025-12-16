@@ -35,6 +35,9 @@ public class AuthService {
 
     @Autowired
     private JwtUtil jwtUtil;
+    
+    @Autowired
+    private CouponService couponService;
 
     /**
      * 用户注册
@@ -84,6 +87,19 @@ public class AuthService {
         // 验证密码
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("密码错误");
+        }
+
+        // 5级用户自动领取每日优惠券
+        if (user.getUserLevel() >= 5) {
+            try {
+                boolean claimed = couponService.claimDailyCoupon(user.getUserId());
+                if (claimed) {
+                    log.info("5级用户{}自动领取每日优惠券成功", user.getUserId());
+                }
+            } catch (Exception e) {
+                log.warn("5级用户{}自动领取每日优惠券失败: {}", user.getUserId(), e.getMessage());
+                // 不影响登录流程，只记录警告日志
+            }
         }
 
         // 生成Token

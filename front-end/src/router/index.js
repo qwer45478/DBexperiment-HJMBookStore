@@ -42,6 +42,16 @@ const routes = [
         component: () => import('@/views/user/Orders.vue')
       },
       {
+        path: 'order-confirm',
+        name: 'OrderConfirm',
+        component: () => import('@/views/user/OrderConfirm.vue')
+      },
+      {
+        path: 'coupons',
+        name: 'MyCoupons',
+        component: () => import('@/views/user/MyCoupons.vue')
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/user/Profile.vue')

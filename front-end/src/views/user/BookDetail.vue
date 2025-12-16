@@ -183,23 +183,30 @@ const handleAddToCart = async () => {
   }
 }
 
-const handleBuyNow = async () => {
+const handleBuyNow = () => {
   try {
-    const userId = userStore.userInfo.userId
-    await orderAPI.create({
-      userId,
+    if (book.value.stock === 0) {
+      ElMessage.warning('商品库存不足')
+      return
+    }
+
+    // 构造商品信息
+    const items = [{
       bookId: book.value.bookId,
-      quantity: quantity.value
+      quantity: quantity.value,
+      unitPrice: book.value.price
+    }]
+
+    // 跳转到订单确认页面
+    router.push({
+      name: 'OrderConfirm',
+      query: {
+        items: JSON.stringify(items),
+        cartIds: JSON.stringify([]) // 立即购买没有购物车ID
+      }
     })
-    
-    // 重新获取用户信息以更新累计消费
-    const res = await userAPI.getInfo(userId)
-    userStore.setUserInfo(res.data)
-    
-    ElMessage.success('下单成功')
-    router.push('/user/orders')
   } catch (error) {
-    ElMessage.error(error.message || '下单失败')
+    ElMessage.error('跳转失败')
   }
 }
 

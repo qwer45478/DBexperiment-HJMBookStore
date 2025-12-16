@@ -1,6 +1,8 @@
 package com.hjm.bookstore.controller;
 
 import com.hjm.bookstore.common.Result;
+import com.hjm.bookstore.dto.OrderConfirmRequest;
+import com.hjm.bookstore.dto.OrderConfirmResponse;
 import com.hjm.bookstore.entity.ShoppingHist;
 import com.hjm.bookstore.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +75,72 @@ public class OrderController {
             return Result.success(statistics);
         } catch (Exception e) {
             log.error("获取统计数据失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 订单确认页面数据准备
+     */
+    @PostMapping("/confirm")
+    public Result<OrderConfirmResponse> prepareOrderConfirmation(@RequestBody OrderConfirmRequest request) {
+        try {
+            OrderConfirmResponse response = orderService.prepareOrderConfirmation(request.getUserId(), request);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("准备订单确认数据失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 创建确认后的订单
+     */
+    @PostMapping("/create-confirmed")
+    public Result<List<ShoppingHist>> createConfirmedOrders(@RequestBody OrderConfirmRequest request) {
+        try {
+            List<ShoppingHist> orders = orderService.createConfirmedOrders(request.getUserId(), request);
+            return Result.success("订单创建成功", orders);
+        } catch (Exception e) {
+            log.error("创建确认订单失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 取消订单
+     */
+    @PostMapping("/cancel/{orderId}")
+    public Result<String> cancelOrder(@PathVariable Long orderId, @RequestBody Map<String, Object> request) {
+        try {
+            Integer userId = (Integer) request.get("userId");
+            boolean success = orderService.cancelOrder(orderId, userId);
+            if (success) {
+                return Result.success("订单取消成功");
+            } else {
+                return Result.error("订单不存在或取消失败");
+            }
+        } catch (Exception e) {
+            log.error("取消订单失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 签收订单
+     */
+    @PostMapping("/receive/{orderId}")
+    public Result<String> receiveOrder(@PathVariable Long orderId, @RequestBody Map<String, Object> request) {
+        try {
+            Integer userId = (Integer) request.get("userId");
+            boolean success = orderService.receiveOrder(orderId, userId);
+            if (success) {
+                return Result.success("订单签收成功");
+            } else {
+                return Result.error("订单不存在或签收失败");
+            }
+        } catch (Exception e) {
+            log.error("签收订单失败", e);
             return Result.error(e.getMessage());
         }
     }

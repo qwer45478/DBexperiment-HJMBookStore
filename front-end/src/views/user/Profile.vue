@@ -79,28 +79,70 @@
         </template>
         <div class="level-info">
           <div class="level-item">
-            <el-tag type="info">LV0</el-tag>
-            <span>消费 0-30元</span>
+            <div class="level-header">
+              <el-tag type="info">LV0 普通会员</el-tag>
+              <span class="level-requirement">消费 0-30元</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Close /></el-icon> 无折扣</p>
+              <p><el-icon><Close /></el-icon> 无免运费</p>
+              <p><el-icon><Close /></el-icon> 无每日优惠券</p>
+            </div>
           </div>
           <div class="level-item">
-            <el-tag type="success">LV1</el-tag>
-            <span>消费 30-198元</span>
+            <div class="level-header">
+              <el-tag type="success">LV1 铜牌会员</el-tag>
+              <span class="level-requirement">消费 30-198元</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Check /></el-icon> 98折优惠</p>
+              <p><el-icon><Close /></el-icon> 无免运费</p>
+              <p><el-icon><Close /></el-icon> 无每日优惠券</p>
+            </div>
           </div>
           <div class="level-item">
-            <el-tag type="warning">LV2</el-tag>
-            <span>消费 198-328元</span>
+            <div class="level-header">
+              <el-tag type="warning">LV2 银牌会员</el-tag>
+              <span class="level-requirement">消费 198-328元</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Check /></el-icon> 97折优惠</p>
+              <p><el-icon><Close /></el-icon> 无免运费</p>
+              <p><el-icon><Close /></el-icon> 无每日优惠券</p>
+            </div>
           </div>
           <div class="level-item">
-            <el-tag type="danger">LV3</el-tag>
-            <span>消费 328-648元</span>
+            <div class="level-header">
+              <el-tag type="danger">LV3 金牌会员</el-tag>
+              <span class="level-requirement">消费 328-648元</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Check /></el-icon> 95折优惠</p>
+              <p><el-icon><Close /></el-icon> 无免运费</p>
+              <p><el-icon><Close /></el-icon> 无每日优惠券</p>
+            </div>
           </div>
           <div class="level-item">
-            <el-tag type="danger">LV4</el-tag>
-            <span>消费 648-1998元</span>
+            <div class="level-header">
+              <el-tag type="danger">LV4 白金会员</el-tag>
+              <span class="level-requirement">消费 648-1998元</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Check /></el-icon> 95折优惠</p>
+              <p><el-icon><Check /></el-icon> 免运费</p>
+              <p><el-icon><Close /></el-icon> 无每日优惠券</p>
+            </div>
           </div>
           <div class="level-item">
-            <el-tag type="danger">LV5</el-tag>
-            <span>消费 1998元以上</span>
+            <div class="level-header">
+              <el-tag type="danger">LV5 钻石会员</el-tag>
+              <span class="level-requirement">消费 1998元以上</span>
+            </div>
+            <div class="level-benefits">
+              <p><el-icon><Check /></el-icon> 95折优惠</p>
+              <p><el-icon><Check /></el-icon> 免运费</p>
+              <p><el-icon><Check /></el-icon> 每日优惠券(¥5)</p>
+            </div>
           </div>
         </div>
       </el-card>
@@ -318,16 +360,68 @@ onMounted(() => {
 
 .level-info {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
 .level-item {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+}
+
+.level-item:hover {
+  border-color: #7c3aed;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.15);
+}
+
+.level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.level-requirement {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.level-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.level-benefits p {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 15px;
-  background: #f9fafb;
-  border-radius: 8px;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.level-benefits .el-icon {
+  font-size: 16px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .level-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .level-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }
 </style>
