@@ -184,7 +184,7 @@ public class CouponService {
             }
             
             // 删除用户优惠券记录
-            userCouponRepository.deleteById(userId, couponId);
+            userCouponRepository.deleteById(new UserCoupon.UserCouponId(userId, couponId));
             
             log.info("优惠券使用成功: userId={}, couponId={}", userId, couponId);
             return true;
