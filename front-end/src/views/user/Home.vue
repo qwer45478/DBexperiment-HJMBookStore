@@ -42,7 +42,7 @@
               <p class="book-author">{{ book.author }}</p>
               <div class="book-meta">
                 <span class="price">¥{{ book.price }}</span>
-                <span class="rating">
+                 <span class="rating">
                   <el-icon><StarFilled /></el-icon>
                   {{ book.rating }}
                 </span>

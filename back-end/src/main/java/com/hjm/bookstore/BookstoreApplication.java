@@ -2,15 +2,14 @@ package com.hjm.bookstore;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.retry.annotation.EnableRetry;
 
-/**
- * 哈籍迷书城购物系统主应用类
- */
 @SpringBootApplication
-@EnableScheduling
+@EnableRetry  // 启用重试机制
 public class BookstoreApplication {
+
     public static void main(String[] args) {
         SpringApplication.run(BookstoreApplication.class, args);
     }
+
 }

@@ -11,6 +11,9 @@ import com.hjm.bookstore.repository.UserInfoRepository;
 import com.hjm.bookstore.repository.UserAddressRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,6 +57,9 @@ public class OrderService {
      * 创建订单
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public ShoppingHist createOrder(Integer userId, Integer bookId, Integer quantity) {
         // 检查用户
         Optional<UserInfo> userOpt = userInfoRepository.findById(userId);
@@ -105,6 +111,9 @@ public class OrderService {
      * 批量创建订单（购物车结算）
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public List<ShoppingHist> createBatchOrders(Integer userId, List<Map<String, Integer>> items) {
         List<ShoppingHist> orders = new ArrayList<>();
         
@@ -195,195 +204,76 @@ public class OrderService {
     /**
      * 订单确认页面数据准备
      */
-    public OrderConfirmResponse prepareOrderConfirmation(Integer userId, OrderConfirmRequest request) {
-        // 获取用户信息
-        UserInfo user = userInfoRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+    public OrderConfirmResponse prepareOrderConfirmation(OrderConfirmRequest request) {
+        OrderConfirmResponse response = new OrderConfirmResponse();
         
-        // 计算原价
-        BigDecimal originalPrice = BigDecimal.ZERO;
-        List<OrderConfirmResponse.OrderItemResponse> itemResponses = new ArrayList<>();
+        // 获取用户地址
+        List<String> addresses = userAddressRepository.findAddressesByUserId(request.getUserId());
+        response.setAddresses(addresses);
         
-        for (OrderConfirmRequest.OrderItemRequest item : request.getItems()) {
-            BooksInfo book = booksInfoRepository.findById(item.getBookId())
-                    .orElseThrow(() -> new RuntimeException("书籍不存在: " + item.getBookId()));
+        // 计算总价
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<OrderConfirmResponse.CartItem> cartItems = new ArrayList<>();
+        
+        for (Map<String, Integer> item : request.getItems()) {
+            Integer bookId = item.get("bookId");
+            Integer quantity = item.get("quantity");
             
-            BigDecimal itemTotal = book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            originalPrice = originalPrice.add(itemTotal);
-            
-            OrderConfirmResponse.OrderItemResponse itemResponse = new OrderConfirmResponse.OrderItemResponse();
-            itemResponse.setBookId(book.getBookId());
-            itemResponse.setBookName(book.getBookName());
-            itemResponse.setAuthor(book.getAuthor());
-            itemResponse.setQuantity(item.getQuantity());
-            itemResponse.setUnitPrice(book.getPrice());
-            itemResponse.setTotalPrice(itemTotal);
-            itemResponses.add(itemResponse);
+            Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
+            if (bookOpt.isPresent()) {
+                BooksInfo book = bookOpt.get();
+                OrderConfirmResponse.CartItem cartItem = new OrderConfirmResponse.CartItem();
+                cartItem.setBookId(book.getBookId());
+                cartItem.setBookName(book.getBookName());
+                cartItem.setAuthor(book.getAuthor());
+                cartItem.setPrice(book.getPrice());
+                cartItem.setQuantity(quantity);
+                cartItem.setSubtotal(book.getPrice().multiply(new BigDecimal(quantity)));
+                cartItems.add(cartItem);
+                
+                totalAmount = totalAmount.add(cartItem.getSubtotal());
+            }
         }
         
-        // 计算折扣和运费
-        BigDecimal discountRate = userLevelService.getDiscountRate(user.getUserLevel());
-        BigDecimal discountAmount = userLevelService.calculateDiscount(user.getUserLevel(), originalPrice);
-        BigDecimal shippingFee = userLevelService.calculateShippingFee(user.getUserLevel());
-        
-        // 计算优惠券折扣
-        BigDecimal couponDiscount = BigDecimal.ZERO;
-        if (request.getCouponId() != null && !request.getCouponId().trim().isEmpty()) {
-            couponDiscount = couponService.calculateCouponDiscount(request.getCouponId(), originalPrice);
-        }
-        
-        // 计算最终价格
-        BigDecimal finalPrice = userLevelService.calculateFinalAmount(user.getUserLevel(), originalPrice, couponDiscount);
+        response.setItems(cartItems);
+        response.setTotalAmount(totalAmount);
         
         // 获取可用优惠券
-        List<com.hjm.bookstore.dto.CouponResponse> availableCoupons = 
-                couponService.getUserAvailableCoupons(userId, originalPrice);
-        
-        // 构建响应
-        OrderConfirmResponse response = new OrderConfirmResponse();
-        response.setItems(itemResponses);
-        response.setAddress(request.getAddress());
-        response.setOriginalPrice(originalPrice);
-        response.setShippingFee(shippingFee);
-        response.setDiscountRate(discountRate);
-        response.setDiscountAmount(discountAmount);
-        response.setCouponDiscount(couponDiscount);
-        response.setFinalPrice(finalPrice);
-        response.setUserLevelName(userLevelService.getLevelName(user.getUserLevel()));
-        response.setAvailableCoupons(availableCoupons);
+        List<OrderConfirmResponse.CouponInfo> coupons = couponService.getAvailableCoupons(request.getUserId(), totalAmount);
+        response.setCoupons(coupons);
         
         return response;
-    }
-    
-    /**
-     * 创建确认后的订单
-     */
-    @Transactional
-    public List<ShoppingHist> createConfirmedOrders(Integer userId, OrderConfirmRequest request) {
-        List<ShoppingHist> orders = new ArrayList<>();
-        
-        // 获取用户信息
-        UserInfo user = userInfoRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
-        
-        // 计算总原价用于优惠券验证
-        BigDecimal totalOriginalPrice = BigDecimal.ZERO;
-        for (OrderConfirmRequest.OrderItemRequest item : request.getItems()) {
-            BooksInfo book = booksInfoRepository.findById(item.getBookId())
-                    .orElseThrow(() -> new RuntimeException("书籍不存在: " + item.getBookId()));
-            totalOriginalPrice = totalOriginalPrice.add(book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-        }
-        
-        // 验证优惠券
-        if (request.getCouponId() != null && !request.getCouponId().trim().isEmpty()) {
-            BigDecimal couponDiscount = couponService.calculateCouponDiscount(request.getCouponId(), totalOriginalPrice);
-            if (couponDiscount.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new RuntimeException("优惠券不可用");
-            }
-        }
-        
-        // 创建订单
-        for (OrderConfirmRequest.OrderItemRequest item : request.getItems()) {
-            BooksInfo book = booksInfoRepository.findById(item.getBookId())
-                    .orElseThrow(() -> new RuntimeException("书籍不存在: " + item.getBookId()));
-            
-            if (book.getStatus() == 0) {
-                throw new RuntimeException("书籍已下架: " + book.getBookName());
-            }
-            
-            if (book.getStock() < item.getQuantity()) {
-                throw new RuntimeException("库存不足: " + book.getBookName());
-            }
-            
-            ShoppingHist order = new ShoppingHist();
-            order.setUserId(userId);
-            order.setBookId(item.getBookId());
-            order.setQuantity(item.getQuantity());
-            order.setUnitPrice(book.getPrice());
-            order.setTotalPrice(book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-            order.setOrderStatus(1); // 1-运送中
-            order.setAddress(request.getAddress());
-            
-            ShoppingHist savedOrder = shoppingHistRepository.save(order);
-            orders.add(savedOrder);
-            
-            // 更新书籍销量和库存
-            bookService.updateSales(item.getBookId(), item.getQuantity());
-        }
-        
-        // 更新用户消费金额和等级（使用实际支付金额）
-        BigDecimal finalAmount = userLevelService.calculateFinalAmount(
-                user.getUserLevel(), totalOriginalPrice, 
-                couponService.calculateCouponDiscount(request.getCouponId(), totalOriginalPrice));
-        
-        user.setTotalSpending(user.getTotalSpending().add(finalAmount));
-        user.updateUserLevel();
-        userInfoRepository.save(user);
-        
-        // 使用优惠券（如果有）
-        if (request.getCouponId() != null && !request.getCouponId().trim().isEmpty()) {
-            boolean couponUsed = couponService.useCoupon(userId, request.getCouponId());
-            if (!couponUsed) {
-                log.warn("优惠券使用失败，但订单已创建: userId={}, couponId={}", userId, request.getCouponId());
-            }
-        }
-        
-        log.info("创建确认订单成功: 用户{} 订单数量{} 总金额{}", userId, orders.size(), finalAmount);
-        return orders;
     }
     
     /**
      * 取消订单
      */
     @Transactional
-    public boolean cancelOrder(Long orderId, Integer userId) {
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
+    public void cancelOrder(Long orderId) {
         Optional<ShoppingHist> orderOpt = shoppingHistRepository.findById(orderId);
         if (orderOpt.isEmpty()) {
-            return false;
+            throw new RuntimeException("订单不存在");
         }
         
         ShoppingHist order = orderOpt.get();
-        if (!order.getUserId().equals(userId)) {
-            throw new RuntimeException("无权限操作此订单");
+        if (order.getOrderStatus() == 0) {
+            throw new RuntimeException("订单已取消");
         }
         
-        if (order.getOrderStatus() != 1) { // 只有运送中的订单可以取消
-            throw new RuntimeException("订单状态不允许取消");
+        if (order.getOrderStatus() == 2) {
+            throw new RuntimeException("订单已完成，无法取消");
         }
         
-        order.setOrderStatus(0); // 0-已取消
+        // 更新订单状态为已取消
+        order.setOrderStatus(0);
         shoppingHistRepository.save(order);
         
         // 恢复库存
         bookService.restoreStock(order.getBookId(), order.getQuantity());
         
-        log.info("订单取消成功: orderId={}", orderId);
-        return true;
-    }
-    
-    /**
-     * 签收订单
-     */
-    @Transactional
-    public boolean receiveOrder(Long orderId, Integer userId) {
-        Optional<ShoppingHist> orderOpt = shoppingHistRepository.findById(orderId);
-        if (orderOpt.isEmpty()) {
-            return false;
-        }
-        
-        ShoppingHist order = orderOpt.get();
-        if (!order.getUserId().equals(userId)) {
-            throw new RuntimeException("无权限操作此订单");
-        }
-        
-        if (order.getOrderStatus() != 1) { // 只有运送中的订单可以签收
-            throw new RuntimeException("订单状态不允许签收");
-        }
-        
-        order.setOrderStatus(2); // 2-已完成
-        shoppingHistRepository.save(order);
-        
-        log.info("订单签收成功: orderId={}", orderId);
-        return true;
+        log.info("订单取消成功: 订单ID {}", orderId);
     }
 }

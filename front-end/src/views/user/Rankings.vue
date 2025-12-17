@@ -28,12 +28,6 @@
                 <div class="rating-score">
                   <el-icon color="#f59e0b"><StarFilled /></el-icon>
                   <span>{{ book.rating }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- 历史销量榜 -->
         <div class="ranking-section">
           <div class="ranking-header">
