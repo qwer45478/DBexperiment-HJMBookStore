@@ -10,6 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -117,83 +120,116 @@ public class BookService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        List<BooksInfo> results = booksInfoRepository.findAll(spec);
-
-        // 排序
-        if (request.getSortBy() != null) {
-            Comparator<BooksInfo> comparator = null;
-            switch (request.getSortBy()) {
-                case "sales":
-                    comparator = Comparator.comparing(BooksInfo::getSales);
-                    break;
-                case "rating":
-                    comparator = Comparator.comparing(BooksInfo::getRating);
-                    break;
-                case "price":
-                    comparator = Comparator.comparing(BooksInfo::getPrice);
-                    break;
-            }
-
-            if (comparator != null) {
-                if ("desc".equalsIgnoreCase(request.getSortOrder())) {
-                    comparator = comparator.reversed();
-                }
-                results = results.stream().sorted(comparator).collect(Collectors.toList());
-            }
-        }
-
-        // 为搜索结果设置实时评分
-        return setRealTimeRatingsForBooks(results);
-    }
-
-    /**
-     * 获取销量排行榜
-     */
-    public List<BooksInfo> getSalesRanking() {
-        return booksInfoRepository.findTop10ByStatusOrderBySalesDesc(1);
-    }
-
-    /**
-     * 获取月销量排行榜
-     */
-    public List<BooksInfo> getMonthlySalesRanking() {
-        return booksInfoRepository.findTop10ByStatusOrderByMonthlySalesDesc(1);
-    }
-
-    /**
-     * 获取评分排行榜
-     */
-    public List<BooksInfo> getRatingRanking() {
-        List<BooksInfo> books = booksInfoRepository.findTop10ByStatusOrderByRatingDesc(1);
+        List<BooksInfo> books = booksInfoRepository.findAll(spec);
         return setRealTimeRatingsForBooks(books);
     }
 
     /**
-     * 添加或更新书籍
+     * 获取首页推荐书籍（个性化推荐 + 销量推荐）
      */
-    @Transactional
-    public BooksInfo saveBook(BooksInfo book) {
-        return booksInfoRepository.save(book);
+    public Map<String, List<BooksInfo>> getHomePageRecommendations(Integer userId) {
+        Map<String, List<BooksInfo>> recommendations = new HashMap<>();
+        
+        // 个性化推荐
+        List<BooksInfo> personalized = new ArrayList<>();
+        if (userId != null) {
+            personalized = new RecommendationService().recommendBooks(userId, 6);
+        }
+        
+        // 销量推荐（如果没有足够的个性化推荐，则用销量推荐补充）
+        List<BooksInfo> salesBased = booksInfoRepository.findTop10ByStatusOrderBySalesDesc(1);
+        int needMore = 6 - personalized.size();
+        if (needMore > 0 && salesBased.size() > personalized.size()) {
+            personalized.addAll(
+                salesBased.subList(personalized.size(), 
+                                   Math.min(personalized.size() + needMore, salesBased.size()))
+            );
+        }
+        
+        recommendations.put("personalized", personalized);
+        recommendations.put("topSales", salesBased.stream().limit(6).collect(Collectors.toList()));
+
+        // 月销量推荐
+        List<BooksInfo> monthlySales = booksInfoRepository.findTop10ByStatusOrderByMonthlySalesDesc(1);
+        recommendations.put("monthlySales", monthlySales.stream().limit(6).collect(Collectors.toList()));
+
+        return recommendations;
     }
 
     /**
-     * 下架书籍
+     * 获取排行榜数据
+     */
+    public Map<String, List<BooksInfo>> getRankings() {
+        Map<String, List<BooksInfo>> rankings = new HashMap<>();
+        
+        // 评分排行榜
+        List<BooksInfo> ratingRank = booksInfoRepository.findTop50ByStatusOrderByRatingDesc(1);
+        rankings.put("rating", ratingRank.stream().limit(20).collect(Collectors.toList()));
+
+        // 总销量排行榜
+        List<BooksInfo> salesRank = booksInfoRepository.findTop50ByStatusOrderBySalesDesc(1);
+        rankings.put("sales", salesRank.stream().limit(20).collect(Collectors.toList()));
+
+        // 月销量排行榜
+        List<BooksInfo> monthlyRank = booksInfoRepository.findTop50ByStatusOrderByMonthlySalesDesc(1);
+        rankings.put("monthly", monthlyRank.stream().limit(20).collect(Collectors.toList()));
+
+        return rankings;
+    }
+
+    /**
+     * 添加书籍
      */
     @Transactional
-    public void removeBook(Integer bookId) {
-        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
-        if (bookOpt.isPresent()) {
-            BooksInfo book = bookOpt.get();
-            book.setStatus(0);
-            booksInfoRepository.save(book);
-            log.info("书籍下架成功: {}", bookId);
+    public BooksInfo addBook(BooksInfo book) {
+        // 设置初始值
+        if (book.getRating() == null) book.setRating(BigDecimal.ZERO);
+        if (book.getStock() == null) book.setStock(0);
+        if (book.getSales() == null) book.setSales(0);
+        if (book.getMonthlySales() == null) book.setMonthlySales(0);
+        if (book.getStatus() == null) book.setStatus(1);
+        
+        BooksInfo savedBook = booksInfoRepository.save(book);
+        log.info("添加书籍成功: {}", savedBook.getBookName());
+        return savedBook;
+    }
+
+    /**
+     * 更新书籍
+     */
+    @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
+    public BooksInfo updateBook(BooksInfo book) {
+        Optional<BooksInfo> existingBookOpt = booksInfoRepository.findById(book.getBookId());
+        if (existingBookOpt.isEmpty()) {
+            throw new RuntimeException("书籍不存在");
         }
+        
+        BooksInfo existingBook = existingBookOpt.get();
+        // 更新非null字段
+        if (book.getBookName() != null) existingBook.setBookName(book.getBookName());
+        if (book.getCategory() != null) existingBook.setCategory(book.getCategory());
+        if (book.getAuthor() != null) existingBook.setAuthor(book.getAuthor());
+        if (book.getBookImage() != null) existingBook.setBookImage(book.getBookImage());
+        if (book.getDescription() != null) existingBook.setDescription(book.getDescription());
+        if (book.getPublisher() != null) existingBook.setPublisher(book.getPublisher());
+        if (book.getPrice() != null) existingBook.setPrice(book.getPrice());
+        if (book.getStatus() != null) existingBook.setStatus(book.getStatus());
+        
+        BooksInfo updatedBook = booksInfoRepository.save(existingBook);
+        log.info("更新书籍成功: {}", updatedBook.getBookName());
+        return updatedBook;
     }
 
     /**
      * 上架书籍
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public void restoreBook(Integer bookId) {
         Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
         if (bookOpt.isPresent()) {
@@ -254,9 +290,28 @@ public class BookService {
     }
 
     /**
+     * 下架书籍
+     */
+    @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
+    public void removeBook(Integer bookId) {
+        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
+        if (bookOpt.isPresent()) {
+            BooksInfo book = bookOpt.get();
+            book.setStatus(0);
+            booksInfoRepository.save(book);
+        }
+    }
+
+    /**
      * 更新库存
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public void updateStock(Integer bookId, Integer quantity) {
         Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
         if (bookOpt.isPresent()) {
@@ -270,14 +325,24 @@ public class BookService {
      * 更新销量
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public void updateSales(Integer bookId, Integer quantity) {
         Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
         if (bookOpt.isPresent()) {
             BooksInfo book = bookOpt.get();
+            // 检查库存是否足够
+            if (book.getStock() < quantity) {
+                throw new RuntimeException("库存不足，无法完成购买");
+            }
+            
             book.setSales(book.getSales() + quantity);
             book.setMonthlySales(book.getMonthlySales() + quantity);
             book.setStock(book.getStock() - quantity);
             booksInfoRepository.save(book);
+        } else {
+            throw new RuntimeException("书籍不存在");
         }
     }
     
@@ -285,6 +350,9 @@ public class BookService {
      * 恢复库存（取消订单时使用）
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public void restoreStock(Integer bookId, Integer quantity) {
         Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
         if (bookOpt.isPresent()) {
@@ -301,230 +369,58 @@ public class BookService {
      * 保存书籍并上传图片
      */
     @Transactional
-    public BooksInfo saveBookWithImage(String bookData, MultipartFile imageFile) throws IOException {
-        // 解析JSON数据
-        BooksInfo book = objectMapper.readValue(bookData, BooksInfo.class);
-        
-        // 如果有图片文件，先保存书籍获取ID，再上传图片
+    public BooksInfo saveBookWithImage(MultipartFile imageFile, BooksInfo book) throws IOException {
         if (imageFile != null && !imageFile.isEmpty()) {
-            // 先保存书籍获取ID
-            BooksInfo savedBook = booksInfoRepository.save(book);
+            // 创建上传目录
+            Path uploadPath = Paths.get(uploadDir, "images", "books");
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
             
-            // 上传图片
-            String imagePath = uploadImageForBook(savedBook.getBookId(), imageFile);
+            // 保存文件
+            String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            imageFile.transferTo(filePath);
             
-            // 更新书籍的图片路径
-            savedBook.setBookImage(imagePath);
-            return booksInfoRepository.save(savedBook);
-        } else {
-            // 没有图片直接保存
-            return booksInfoRepository.save(book);
+            // 设置图片路径
+            book.setBookImage(uploadDir + "/images/books/" + fileName);
         }
+        
+        return addBook(book);
     }
 
     /**
-     * 为指定书籍上传图片
-     */
-    private String uploadImageForBook(Integer bookId, MultipartFile imageFile) throws IOException {
-        // 创建上传目录
-        String imageUploadPath = uploadDir + "/images/books";
-        Path uploadPath = Paths.get(imageUploadPath);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // 生成文件名：书籍ID.jpg
-        String originalFilename = imageFile.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        if (extension == null) {
-            extension = "jpg"; // 默认扩展名
-        }
-        String fileName = bookId + "." + extension;
-
-        // 保存文件
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(imageFile.getInputStream(), filePath);
-
-        // 返回相对路径用于数据库存储
-        return "uploads/images/books/" + fileName;
-    }
-
-    /**
-     * 获取文件扩展名
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null || filename.isEmpty()) {
-            return null;
-        }
-        int lastDotIndex = filename.lastIndexOf('.');
-        if (lastDotIndex == -1 || lastDotIndex == filename.length() - 1) {
-            return null;
-        }
-        return filename.substring(lastDotIndex + 1).toLowerCase();
-    }
-
-    /**
-     * 从Excel文件批量导入书籍信息
-     * 
-     * @param file Excel文件
-     * @return 导入结果统计
-     * @throws IOException 文件读取异常
-     * @throws IllegalArgumentException 文件格式或内容错误
+     * 批量导入书籍（从Excel）
      */
     @Transactional
-    public ExcelImportResult importBooksFromExcel(MultipartFile file) throws IOException, IllegalArgumentException {
-        log.info("开始导入Excel文件: {}", file.getOriginalFilename());
+    public List<BooksInfo> importBooksFromExcel(MultipartFile excelFile) throws IOException {
+        List<BooksInfo> books = ExcelImportUtils.parseBooksFromExcel(excelFile);
+        List<BooksInfo> savedBooks = new ArrayList<>();
         
-        // 解析Excel文件
-        List<ExcelImportUtils.BookImportData> bookDataList = ExcelImportUtils.parseExcelFile(file);
-        
-        int successCount = 0;
-        int skipCount = 0;
-        List<String> errorMessages = new ArrayList<>();
-        
-        for (int i = 0; i < bookDataList.size(); i++) {
-            ExcelImportUtils.BookImportData importData = bookDataList.get(i);
-            int rowNum = i + 2; // Excel行号（从2开始，因为第1行是表头）
-            
-            try {
-                // 检查是否已存在相同的书籍（根据书名、作者、出版社判断）
-                if (isBookExists(importData.getBookName(), importData.getAuthor(), importData.getPublisher())) {
-                    skipCount++;
-                    log.info("跳过重复书籍: 第{}行, 书名: {}", rowNum, importData.getBookName());
-                    continue;
-                }
-                
-                // 转换为BooksInfo实体
-                BooksInfo book = convertToBookEntity(importData);
-                
-                // 保存到数据库
-                booksInfoRepository.save(book);
-                successCount++;
-                
-                log.info("成功导入书籍: 第{}行, 书名: {}, ID: {}", rowNum, importData.getBookName(), book.getBookId());
-                
-            } catch (Exception e) {
-                String errorMsg = String.format("第%d行导入失败: %s", rowNum, e.getMessage());
-                errorMessages.add(errorMsg);
-                log.error(errorMsg, e);
-            }
+        for (BooksInfo book : books) {
+            BooksInfo savedBook = addBook(book);
+            savedBooks.add(savedBook);
         }
         
-        ExcelImportResult result = new ExcelImportResult();
-        result.setTotalCount(bookDataList.size());
-        result.setSuccessCount(successCount);
-        result.setSkipCount(skipCount);
-        result.setErrorCount(errorMessages.size());
-        result.setErrorMessages(errorMessages);
-        
-        log.info("Excel导入完成 - 总数: {}, 成功: {}, 跳过: {}, 错误: {}", 
-                result.getTotalCount(), result.getSuccessCount(), result.getSkipCount(), result.getErrorCount());
-        
-        return result;
-    }
-
-    /**
-     * 检查书籍是否已存在
-     */
-    private boolean isBookExists(String bookName, String author, String publisher) {
-        return booksInfoRepository.findByBookNameAndAuthorAndPublisher(bookName, author, publisher).isPresent();
-    }
-
-    /**
-     * 获取书籍的实时评分（如果数据库中的评分为0，则从user_score表计算实际评分）
-     */
-    private BooksInfo getBookWithRealTimeRating(BooksInfo book) {
-        if (book != null && (book.getRating() == null || book.getRating().compareTo(BigDecimal.ZERO) == 0)) {
-            // 如果数据库中的评分为0，尝试从user_score表计算实际评分
-            try {
-                Double avgRating = scoreService.getAverageRatingByBookId(book.getBookId());
-                if (avgRating != null && avgRating > 0) {
-                    // 创建新的书籍对象，避免修改数据库中的原始数据
-                    BooksInfo bookWithRealRating = new BooksInfo();
-                    // 复制所有属性
-                    bookWithRealRating.setBookId(book.getBookId());
-                    bookWithRealRating.setBookName(book.getBookName());
-                    bookWithRealRating.setCategory(book.getCategory());
-                    bookWithRealRating.setAuthor(book.getAuthor());
-                    bookWithRealRating.setBookImage(book.getBookImage());
-                    bookWithRealRating.setDescription(book.getDescription());
-                    bookWithRealRating.setPublisher(book.getPublisher());
-                    bookWithRealRating.setPrice(book.getPrice());
-                    bookWithRealRating.setRating(BigDecimal.valueOf(avgRating).setScale(1, BigDecimal.ROUND_HALF_UP));
-                    bookWithRealRating.setStock(book.getStock());
-                    bookWithRealRating.setSales(book.getSales());
-                    bookWithRealRating.setMonthlySales(book.getMonthlySales());
-                    bookWithRealRating.setStatus(book.getStatus());
-                    bookWithRealRating.setCreatedAt(book.getCreatedAt());
-                    bookWithRealRating.setUpdatedAt(book.getUpdatedAt());
-                    
-                    return bookWithRealRating;
-                }
-            } catch (Exception e) {
-                log.warn("计算书籍 {} 的实时评分失败: {}", book.getBookId(), e.getMessage());
-            }
-        }
-        return book;
+        log.info("批量导入书籍成功，共导入 {} 本", savedBooks.size());
+        return savedBooks;
     }
 
     /**
      * 为书籍列表设置实时评分
      */
     private List<BooksInfo> setRealTimeRatingsForBooks(List<BooksInfo> books) {
-        if (books == null || books.isEmpty()) {
-            return books;
-        }
-        
         return books.stream()
                 .map(this::getBookWithRealTimeRating)
                 .collect(Collectors.toList());
     }
 
     /**
-     * 将导入数据转换为书籍实体
+     * 为单本书籍设置实时评分
      */
-    private BooksInfo convertToBookEntity(ExcelImportUtils.BookImportData importData) {
-        BooksInfo book = new BooksInfo();
-        book.setBookName(importData.getBookName());
-        book.setCategory(importData.getCategory());
-        book.setAuthor(importData.getAuthor());
-        book.setDescription(importData.getDescription());
-        book.setPublisher(importData.getPublisher());
-        book.setPrice(importData.getPrice());
-        book.setStock(importData.getStock());
-        book.setRating(BigDecimal.ZERO); // 初始评分为0
-        book.setSales(0); // 初始销量为0
-        book.setMonthlySales(0); // 初始月销量为0
-        book.setStatus(1); // 默认上架状态
-        book.setBookImage(null); // Excel导入时不设置图片
-        
+    private BooksInfo getBookWithRealTimeRating(BooksInfo book) {
+        BigDecimal realTimeRating = scoreService.calculateAverageScore(book.getBookId());
+        book.setRating(realTimeRating);
         return book;
-    }
-
-    /**
-     * Excel导入结果统计类
-     */
-    public static class ExcelImportResult {
-        private int totalCount;
-        private int successCount;
-        private int skipCount;
-        private int errorCount;
-        private List<String> errorMessages;
-
-        // Getters and Setters
-        public int getTotalCount() { return totalCount; }
-        public void setTotalCount(int totalCount) { this.totalCount = totalCount; }
-
-        public int getSuccessCount() { return successCount; }
-        public void setSuccessCount(int successCount) { this.successCount = successCount; }
-
-        public int getSkipCount() { return skipCount; }
-        public void setSkipCount(int skipCount) { this.skipCount = skipCount; }
-
-        public int getErrorCount() { return errorCount; }
-        public void setErrorCount(int errorCount) { this.errorCount = errorCount; }
-
-        public List<String> getErrorMessages() { return errorMessages; }
-        public void setErrorMessages(List<String> errorMessages) { this.errorMessages = errorMessages; }
     }
 }

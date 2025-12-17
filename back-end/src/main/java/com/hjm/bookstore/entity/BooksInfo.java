@@ -64,6 +64,10 @@ public class BooksInfo {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

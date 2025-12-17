@@ -6,6 +6,9 @@ import com.hjm.bookstore.repository.BooksInfoRepository;
 import com.hjm.bookstore.repository.ShoppingCartRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +62,9 @@ public class ShoppingCartService {
      * 添加商品到购物车
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public ShoppingCart addToCart(Integer userId, Integer bookId, Integer quantity) {
         // 检查书籍是否存在
         Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
@@ -101,6 +107,9 @@ public class ShoppingCartService {
      * 更新购物车商品数量
      */
     @Transactional
+    @Retryable(value = {ObjectOptimisticLockingFailureException.class, RuntimeException.class}, 
+               maxAttempts = 3, 
+               backoff = @Backoff(delay = 100, multiplier = 2))
     public ShoppingCart updateQuantity(Integer cartId, Integer quantity) {
         Optional<ShoppingCart> cartOpt = shoppingCartRepository.findById(cartId);
         if (cartOpt.isEmpty()) {
