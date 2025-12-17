@@ -142,34 +142,32 @@ const handleRemove = async (cartId) => {
   }
 }
 
-const handleCheckout = async () => {
+const handleCheckout = () => {
   try {
     const selectedItems = cartItems.value.filter(item => item.selected)
-    const userId = userStore.userInfo.userId
+    
+    if (selectedItems.length === 0) {
+      ElMessage.warning('请选择要结算的商品')
+      return
+    }
 
     const items = selectedItems.map(item => ({
       bookId: item.bookId,
-      quantity: item.quantity
+      quantity: item.quantity,
+      unitPrice: item.price
     }))
+    const cartIds = selectedItems.map(item => item.cartId)
 
-    await orderAPI.create({
-      userId,
-      items
+    // 跳转到订单确认页面
+    router.push({
+      name: 'OrderConfirm',
+      query: {
+        items: JSON.stringify(items),
+        cartIds: JSON.stringify(cartIds)
+      }
     })
-
-    // 删除已结算的购物车项
-    for (const item of selectedItems) {
-      await cartAPI.remove(item.cartId)
-    }
-
-    // 重新获取用户信息以更新累计消费
-    const res = await userAPI.getInfo(userId)
-    userStore.setUserInfo(res.data)
-
-    ElMessage.success('下单成功')
-    router.push('/user/orders')
   } catch (error) {
-    ElMessage.error(error.message || '下单失败')
+    ElMessage.error('结算失败')
   }
 }
 

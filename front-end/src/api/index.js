@@ -102,7 +102,11 @@ export const cartAPI = {
 export const orderAPI = {
   create: (data) => request.post('/orders/create', data),
   getList: (userId) => request.get(`/orders/${userId}`),
-  getStatistics: () => request.get('/orders/statistics')
+  getStatistics: () => request.get('/orders/statistics'),
+  prepareConfirm: (data) => request.post('/orders/confirm', data),
+  createConfirmed: (data) => request.post('/orders/create-confirmed', data),
+  cancel: (orderId, data) => request.post(`/orders/cancel/${orderId}`, data),
+  receive: (orderId, data) => request.post(`/orders/receive/${orderId}`, data)
 }
 
 // 用户相关API
@@ -135,6 +139,27 @@ export const adminAPI = {
   add: (data) => request.post('/admin/add', data),
   remove: (id) => request.delete(`/admin/remove/${id}`),
   changePassword: (data) => request.put('/admin/change-password', data)
+}
+
+// 优惠券相关API
+export const couponAPI = {
+  getUserCoupons: (userId) => request.get(`/coupons/user/${userId}`),
+  claim: (data) => request.post('/coupons/claim', data),
+  claimDaily: (data) => request.post('/coupons/daily', data),
+  getAvailable: (userId, orderAmount) => request.get(`/coupons/available/${userId}`, { 
+    params: orderAmount ? { orderAmount } : {} 
+  }),
+  getExpiring: (userId) => request.get(`/coupons/expiring/${userId}`),
+  calculateDiscount: (couponId, orderAmount) => request.get('/coupons/calculate-discount', {
+    params: { couponId, orderAmount }
+  })
+}
+
+// 用户等级相关API
+export const userLevelAPI = {
+  getInfo: (userId) => request.get(`/user-level/info/${userId}`),
+  getDescriptions: () => request.get('/user-level/descriptions'),
+  updateLevel: (userId) => request.post(`/user-level/update/${userId}`)
 }
 
 export default request

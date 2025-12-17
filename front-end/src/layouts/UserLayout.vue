@@ -38,8 +38,18 @@
             </div>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                <el-dropdown-item command="coupons">
+                  <el-icon><Ticket /></el-icon>
+                  我的优惠券
+                </el-dropdown-item>
+                <el-dropdown-item command="profile">
+                  <el-icon><UserFilled /></el-icon>
+                  个人中心
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
+                  <el-icon><SwitchButton /></el-icon>
+                  退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -70,6 +80,8 @@ const userStore = useUserStore()
 const handleCommand = (command) => {
   if (command === 'profile') {
     router.push('/user/profile')
+  } else if (command === 'coupons') {
+    router.push('/user/coupons')
   } else if (command === 'logout') {
     userStore.logout()
     ElMessage.success('已退出登录')

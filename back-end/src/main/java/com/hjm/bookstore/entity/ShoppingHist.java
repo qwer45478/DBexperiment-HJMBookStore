@@ -37,8 +37,11 @@ public class ShoppingHist {
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
     
+    @Column(name = "address", length = 500)
+    private String address;
+    
     @Column(name = "order_status")
-    private Integer orderStatus = 1;
+    private Integer orderStatus = 1; // 0-已取消，1-运送中，2-已完成
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

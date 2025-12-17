@@ -12,8 +12,8 @@
               <span class="order-id">订单号：{{ order.orderId }}</span>
               <span class="order-time">{{ formatDate(order.createdAt) }}</span>
             </div>
-            <el-tag :type="order.orderStatus === 1 ? 'success' : 'info'">
-              {{ order.orderStatus === 1 ? '已完成' : '已取消' }}
+            <el-tag :type="getStatusType(order.orderStatus)">
+              {{ getStatusText(order.orderStatus) }}
             </el-tag>
           </div>
 
@@ -24,6 +24,7 @@
                 <h4>{{ order.bookName }}</h4>
                 <p>{{ order.author }}</p>
                 <div class="quantity">数量：{{ order.quantity }}</div>
+                <div class="address">收货地址：{{ order.address || '无' }}</div>
               </div>
             </div>
 
@@ -36,6 +37,25 @@
                 <span>总计：</span>
                 <span class="total-price">¥{{ order.totalPrice }}</span>
               </div>
+            </div>
+
+            <div class="order-actions">
+              <el-button 
+                v-if="order.orderStatus === 1" 
+                type="danger" 
+                size="small" 
+                @click="handleCancelOrder(order)"
+              >
+                取消订单
+              </el-button>
+              <el-button 
+                v-if="order.orderStatus === 1" 
+                type="success" 
+                size="small" 
+                @click="handleReceiveOrder(order)"
+              >
+                确认签收
+              </el-button>
             </div>
           </div>
         </el-card>
@@ -51,6 +71,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { orderAPI } from '@/api'
 import { useUserStore } from '@/stores/user'
 
@@ -72,6 +93,76 @@ const loadOrders = async () => {
 const formatDate = (dateStr) => {
   const date = new Date(dateStr)
   return date.toLocaleString('zh-CN')
+}
+
+const getStatusType = (status) => {
+  switch (status) {
+    case 0: return 'danger'  // 已取消
+    case 1: return 'warning' // 运送中
+    case 2: return 'success' // 已完成
+    default: return 'info'
+  }
+}
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 0: return '已取消'
+    case 1: return '运送中'
+    case 2: return '已完成'
+    default: return '未知状态'
+  }
+}
+
+const handleCancelOrder = async (order) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要取消订单 ${order.orderId} 吗？取消后将恢复库存。`,
+      '取消订单',
+      {
+        confirmButtonText: '确定取消',
+        cancelButtonText: '再想想',
+        type: 'warning'
+      }
+    )
+
+    await orderAPI.cancel(order.orderId, {
+      userId: userStore.userInfo.userId
+    })
+    
+    ElMessage.success('订单取消成功')
+    loadOrders() // 重新加载订单列表
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消订单失败', error)
+      ElMessage.error(error.message || '取消订单失败')
+    }
+  }
+}
+
+const handleReceiveOrder = async (order) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定已收到订单 ${order.orderId} 的商品吗？`,
+      '确认签收',
+      {
+        confirmButtonText: '确认签收',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+
+    await orderAPI.receive(order.orderId, {
+      userId: userStore.userInfo.userId
+    })
+    
+    ElMessage.success('签收成功')
+    loadOrders() // 重新加载订单列表
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('签收失败', error)
+      ElMessage.error(error.message || '签收失败')
+    }
+  }
 }
 
 onMounted(() => {
@@ -137,7 +228,7 @@ onMounted(() => {
 .order-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .book-info {
@@ -171,6 +262,16 @@ onMounted(() => {
   color: #9ca3af;
 }
 
+.address {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 4px;
+  border-left: 3px solid #7c3aed;
+}
+
 .order-price {
   display: flex;
   flex-direction: column;
@@ -194,5 +295,13 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 700;
   color: #7c3aed;
+}
+
+.order-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  min-width: 100px;
 }
 </style>

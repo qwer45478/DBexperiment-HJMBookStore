@@ -280,6 +280,22 @@ public class BookService {
             booksInfoRepository.save(book);
         }
     }
+    
+    /**
+     * 恢复库存（取消订单时使用）
+     */
+    @Transactional
+    public void restoreStock(Integer bookId, Integer quantity) {
+        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
+        if (bookOpt.isPresent()) {
+            BooksInfo book = bookOpt.get();
+            book.setStock(book.getStock() + quantity);
+            book.setSales(Math.max(0, book.getSales() - quantity));
+            book.setMonthlySales(Math.max(0, book.getMonthlySales() - quantity));
+            booksInfoRepository.save(book);
+            log.info("恢复库存成功: 书籍{} 数量{}", bookId, quantity);
+        }
+    }
 
     /**
      * 保存书籍并上传图片
