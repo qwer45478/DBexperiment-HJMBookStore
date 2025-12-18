@@ -21,6 +21,10 @@
             <el-icon><Reading /></el-icon>
             <span>书籍管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin/coupons">
+            <el-icon><Discount /></el-icon>
+            <span>优惠券管理</span>
+          </el-menu-item>
           <el-menu-item index="/admin/carousel">
             <el-icon><Picture /></el-icon>
             <span>轮播图管理</span>

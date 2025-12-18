@@ -36,4 +36,10 @@ public interface CouponTypeRepository extends JpaRepository<CouponType, String> 
      */
     @Query("SELECT c FROM CouponType c WHERE c.discountAmount >= :minAmount AND c.discountAmount <= :maxAmount ORDER BY c.discountAmount DESC")
     List<CouponType> findByDiscountAmountBetween(@Param("minAmount") Integer minAmount, @Param("maxAmount") Integer maxAmount);
+    
+    /**
+     * 查找最大的优惠券ID（按字符串倒序取首个）
+     */
+    @Query(value = "SELECT coupon_id FROM coupon_type ORDER BY coupon_id DESC LIMIT 1", nativeQuery = true)
+    String findMaxCouponId();
 }

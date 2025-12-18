@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import jakarta.transaction.Transactional;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -38,4 +39,10 @@ public interface UserInfoRepository extends JpaRepository<UserInfo, Integer> {
      */
     @Query("SELECT COUNT(u) > 0 FROM UserInfo u WHERE u.userId = :userId AND DATE(u.latestLog) = CURRENT_DATE")
     boolean hasLoggedInToday(@Param("userId") Integer userId);
+    
+    /**
+     * 根据用户等级查找用户ID列表
+     */
+    @Query("SELECT u.userId FROM UserInfo u WHERE u.userLevel = :userLevel")
+    List<Integer> findUserIdsByLevel(@Param("userLevel") Integer userLevel);
 }

@@ -152,7 +152,12 @@ export const couponAPI = {
   getExpiring: (userId) => request.get(`/coupons/expiring/${userId}`),
   calculateDiscount: (couponId, orderAmount) => request.get('/coupons/calculate-discount', {
     params: { couponId, orderAmount }
-  })
+  }),
+  // 管理员优惠券管理API
+  getAdminTypes: () => request.get('/coupons/admin/types'),
+  addAdminType: (data) => request.post('/coupons/admin/types', data),
+  deleteAdminType: (couponId) => request.delete(`/coupons/admin/types/${couponId}`),
+  issueCoupons: (data) => request.post('/coupons/admin/issue', data)
 }
 
 // 用户等级相关API

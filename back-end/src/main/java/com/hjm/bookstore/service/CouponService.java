@@ -13,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -196,5 +199,132 @@ public class CouponService {
             log.error("使用优惠券失败: userId={}, couponId={}", userId, couponId, e);
             return false;
         }
+    }
+    
+    /**
+     * 管理员获取所有优惠券类型
+     */
+    public List<Map<String, Object>> getAllCouponTypes() {
+        List<CouponType> couponTypes = couponTypeRepository.findAll();
+        
+        return couponTypes.stream()
+                .map(ct -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("couponId", ct.getCouponId());
+                    map.put("couponName", ct.getCouponName());
+                    map.put("discountAmount", ct.getDiscountAmount());
+                    map.put("minAmount", ct.getMinAmount());
+                    map.put("validDays", ct.getValidDays());
+                    map.put("createdAt", ct.getCreatedAt());
+                    
+                    // 统计该优惠券的发放数量
+                    long issuedCount = userCouponRepository.countByCouponId(ct.getCouponId());
+                    map.put("issuedCount", issuedCount);
+                    
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 管理员添加优惠券类型
+     */
+    @Transactional
+    public String addCouponType(String couponName, Integer discountAmount, Integer minAmount, Integer validDays) {
+        // 生成新的优惠券ID
+        String maxId = couponTypeRepository.findMaxCouponId();
+        String newId;
+        if (maxId != null && !maxId.isEmpty()) {
+            int nextId = Integer.parseInt(maxId) + 1;
+            newId = String.format("%02d", nextId);
+        } else {
+            newId = "01";
+        }
+        
+        CouponType couponType = new CouponType();
+        couponType.setCouponId(newId);
+        couponType.setCouponName(couponName);
+        couponType.setDiscountAmount(discountAmount);
+        couponType.setMinAmount(minAmount);
+        couponType.setValidDays(validDays);
+        
+        couponTypeRepository.save(couponType);
+        
+        log.info("管理员添加优惠券类型成功: couponId={}, couponName={}", newId, couponName);
+        return newId;
+    }
+    
+    /**
+     * 管理员删除优惠券类型
+     */
+    @Transactional
+    public boolean deleteCouponType(String couponId) {
+        try {
+            // 检查是否有用户已领取该优惠券
+            long issuedCount = userCouponRepository.countByCouponId(couponId);
+            if (issuedCount > 0) {
+                log.warn("优惠券已被领取，无法删除: couponId={}, issuedCount={}", couponId, issuedCount);
+                return false;
+            }
+            
+            couponTypeRepository.deleteById(couponId);
+            
+            log.info("管理员删除优惠券类型成功: couponId={}", couponId);
+            return true;
+        } catch (Exception e) {
+            log.error("删除优惠券类型失败: couponId={}", couponId, e);
+            return false;
+        }
+    }
+    
+    /**
+     * 管理员为用户发放优惠券
+     */
+    @Transactional
+    public int issueCouponsToUsers(String couponId, Integer quantity, String targetType, Integer targetValue) {
+        // 检查优惠券是否存在
+        Optional<CouponType> couponOpt = couponTypeRepository.findById(couponId);
+        if (!couponOpt.isPresent()) {
+            throw new RuntimeException("优惠券不存在: " + couponId);
+        }
+        
+        List<Integer> targetUserIds = new ArrayList<>();
+        
+        if ("level".equals(targetType)) {
+            // 按用户等级发放
+            targetUserIds = userInfoRepository.findUserIdsByLevel(targetValue);
+        } else if ("user".equals(targetType)) {
+            // 按用户ID发放
+            targetUserIds.add(targetValue);
+        } else {
+            throw new RuntimeException("无效的目标类型: " + targetType);
+        }
+        
+        if (targetUserIds.isEmpty()) {
+            throw new RuntimeException("没有找到目标用户");
+        }
+        
+        int issuedCount = 0;
+        
+        for (Integer userId : targetUserIds) {
+            for (int i = 0; i < quantity; i++) {
+                try {
+                    // 检查用户是否已拥有该优惠券
+                    if (!userCouponRepository.existsById(userId, couponId)) {
+                        UserCoupon userCoupon = new UserCoupon();
+                        userCoupon.setId(new UserCoupon.UserCouponId(userId, couponId));
+                        userCouponRepository.save(userCoupon);
+                        issuedCount++;
+                    }
+                } catch (Exception e) {
+                    log.warn("发放优惠券失败: userId={}, couponId={}", userId, couponId, e);
+                }
+            }
+        }
+        
+        log.info("管理员发放优惠券成功: couponId={}, targetType={}, targetValue={}, issuedCount={}", 
+                couponId, targetType, targetValue, issuedCount);
+        
+        return issuedCount;
     }
 }

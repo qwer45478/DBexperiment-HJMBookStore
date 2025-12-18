@@ -142,4 +142,74 @@ public class CouponController {
             return Result.error(e.getMessage());
         }
     }
+    
+    /**
+     * 管理员获取所有优惠券类型
+     */
+    @GetMapping("/admin/types")
+    public Result<List<Map<String, Object>>> getAllCouponTypes() {
+        try {
+            List<Map<String, Object>> couponTypes = couponService.getAllCouponTypes();
+            return Result.success(couponTypes);
+        } catch (Exception e) {
+            log.error("获取优惠券类型失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 管理员添加优惠券类型
+     */
+    @PostMapping("/admin/types")
+    public Result<String> addCouponType(@RequestBody Map<String, Object> request) {
+        try {
+            String couponName = (String) request.get("couponName");
+            Integer discountAmount = (Integer) request.get("discountAmount");
+            Integer minAmount = (Integer) request.get("minAmount");
+            Integer validDays = (Integer) request.get("validDays");
+            
+            String couponId = couponService.addCouponType(couponName, discountAmount, minAmount, validDays);
+            return Result.success("优惠券添加成功，ID: " + couponId);
+        } catch (Exception e) {
+            log.error("添加优惠券类型失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 管理员删除优惠券类型
+     */
+    @DeleteMapping("/admin/types/{couponId}")
+    public Result<String> deleteCouponType(@PathVariable String couponId) {
+        try {
+            boolean success = couponService.deleteCouponType(couponId);
+            if (success) {
+                return Result.success("优惠券删除成功");
+            } else {
+                return Result.error("优惠券删除失败，可能已被使用");
+            }
+        } catch (Exception e) {
+            log.error("删除优惠券类型失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+    
+    /**
+     * 管理员为用户发放优惠券
+     */
+    @PostMapping("/admin/issue")
+    public Result<String> issueCouponsToUsers(@RequestBody Map<String, Object> request) {
+        try {
+            String couponId = (String) request.get("couponId");
+            Integer quantity = (Integer) request.get("quantity");
+            String targetType = (String) request.get("targetType"); // "level" 或 "user"
+            Integer targetValue = (Integer) request.get("targetValue"); // 用户等级或用户ID
+            
+            int issuedCount = couponService.issueCouponsToUsers(couponId, quantity, targetType, targetValue);
+            return Result.success("成功发放 " + issuedCount + " 张优惠券");
+        } catch (Exception e) {
+            log.error("发放优惠券失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
 }
