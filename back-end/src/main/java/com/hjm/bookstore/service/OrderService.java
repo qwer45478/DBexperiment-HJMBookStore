@@ -138,6 +138,7 @@ public class OrderService {
                 orderInfo.put("quantity", order.getQuantity());
                 orderInfo.put("unitPrice", order.getUnitPrice());
                 orderInfo.put("totalPrice", order.getTotalPrice());
+                orderInfo.put("actualPay", order.getActualPay());
                 orderInfo.put("orderStatus", order.getOrderStatus());
                 orderInfo.put("address", order.getAddress() != null ? order.getAddress() : "无");
                 orderInfo.put("createdAt", order.getCreatedAt());
@@ -274,10 +275,11 @@ public class OrderService {
             totalOriginalPrice = totalOriginalPrice.add(book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }
         
-        // 验证优惠券
+        // 计算优惠券折扣总额
+        BigDecimal totalCouponDiscount = BigDecimal.ZERO;
         if (request.getCouponId() != null && !request.getCouponId().trim().isEmpty()) {
-            BigDecimal couponDiscount = couponService.calculateCouponDiscount(request.getCouponId(), totalOriginalPrice);
-            if (couponDiscount.compareTo(BigDecimal.ZERO) <= 0) {
+            totalCouponDiscount = couponService.calculateCouponDiscount(request.getCouponId(), totalOriginalPrice);
+            if (totalCouponDiscount.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new RuntimeException("优惠券不可用");
             }
         }
@@ -295,12 +297,27 @@ public class OrderService {
                 throw new RuntimeException("库存不足: " + book.getBookName());
             }
             
+            BigDecimal itemOriginalPrice = book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+            
+            // 按比例分摊优惠券折扣到每个订单项
+            BigDecimal itemCouponDiscount = BigDecimal.ZERO;
+            if (totalCouponDiscount.compareTo(BigDecimal.ZERO) > 0) {
+                itemCouponDiscount = totalCouponDiscount
+                    .multiply(itemOriginalPrice)
+                    .divide(totalOriginalPrice, 2, BigDecimal.ROUND_HALF_UP);
+            }
+            
+            // 计算该订单项的实付金额
+            BigDecimal itemFinalAmount = userLevelService.calculateFinalAmount(
+                user.getUserLevel(), itemOriginalPrice, itemCouponDiscount);
+            
             ShoppingHist order = new ShoppingHist();
             order.setUserId(userId);
             order.setBookId(item.getBookId());
             order.setQuantity(item.getQuantity());
             order.setUnitPrice(book.getPrice());
-            order.setTotalPrice(book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            order.setTotalPrice(itemOriginalPrice);
+            order.setActualPay(itemFinalAmount);
             order.setOrderStatus(1); // 1-运送中
             order.setAddress(request.getAddress());
             
@@ -311,12 +328,12 @@ public class OrderService {
             bookService.updateSales(item.getBookId(), item.getQuantity());
         }
         
-        // 更新用户消费金额和等级（使用实际支付金额）
-        BigDecimal finalAmount = userLevelService.calculateFinalAmount(
-                user.getUserLevel(), totalOriginalPrice, 
-                couponService.calculateCouponDiscount(request.getCouponId(), totalOriginalPrice));
+        // 更新用户消费金额和等级（使用实际支付金额总和）
+        BigDecimal totalActualPay = orders.stream()
+            .map(ShoppingHist::getActualPay)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
         
-        user.setTotalSpending(user.getTotalSpending().add(finalAmount));
+        user.setTotalSpending(user.getTotalSpending().add(totalActualPay));
         user.updateUserLevel();
         userInfoRepository.save(user);
         
@@ -328,7 +345,7 @@ public class OrderService {
             }
         }
         
-        log.info("创建确认订单成功: 用户{} 订单数量{} 总金额{}", userId, orders.size(), finalAmount);
+        log.info("创建确认订单成功: 用户{} 订单数量{} 总金额{}", userId, orders.size(), totalActualPay);
         return orders;
     }
     

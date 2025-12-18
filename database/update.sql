@@ -41,7 +41,18 @@ VALUES ('01', '每日优惠券', 5, 0, 7);
 UPDATE shopping_hist SET order_status = 2 WHERE order_status = 1; -- 已完成状态从1改为2
 -- 已取消状态保持为0不变
 
--- 6. 为性能优化添加索引
+-- 6. 为user_info表添加latest_log列记录最新登录时间
+ALTER TABLE user_info 
+ADD COLUMN latest_log TIMESTAMP NULL COMMENT '用户最新登录时间' AFTER updated_at;
+
+-- 8. 为shopping_hist表添加actual_pay列记录实付金额
+ALTER TABLE shopping_hist 
+ADD COLUMN actual_pay DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT '实付金额' AFTER total_price;
+
+-- 9. 为现有订单数据更新actual_pay值（默认使用total_price值）
+UPDATE shopping_hist SET actual_pay = total_price WHERE actual_pay = 0.00;
+
+-- 10. 为性能优化添加索引
 CREATE INDEX idx_shopping_hist_user_status ON shopping_hist(user_id, order_status);
 CREATE INDEX idx_user_coup_user ON user_coup(user_id);
 CREATE INDEX idx_user_coup_obtained ON user_coup(obtained_at);

@@ -33,9 +33,13 @@
                 <span>单价：</span>
                 <span>¥{{ order.unitPrice }}</span>
               </div>
-              <div class="price-item total">
+              <div class="price-item">
                 <span>总计：</span>
-                <span class="total-price">¥{{ order.totalPrice }}</span>
+                <span>¥{{ order.totalPrice }}</span>
+              </div>
+              <div class="price-item actual-pay">
+                <span>实付：</span>
+                <span class="actual-pay-price">¥{{ order.actualPay || order.totalPrice }}</span>
               </div>
             </div>
 
@@ -291,10 +295,22 @@ onMounted(() => {
   font-weight: 600;
 }
 
+.price-item.actual-pay {
+  font-size: 16px;
+  font-weight: 600;
+  color: #059669;
+}
+
 .total-price {
   font-size: 20px;
   font-weight: 700;
   color: #7c3aed;
+}
+
+.actual-pay-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #059669;
 }
 
 .order-actions {

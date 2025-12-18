@@ -5,6 +5,7 @@ import com.hjm.bookstore.entity.CouponType;
 import com.hjm.bookstore.entity.UserCoupon;
 import com.hjm.bookstore.repository.CouponTypeRepository;
 import com.hjm.bookstore.repository.UserCouponRepository;
+import com.hjm.bookstore.repository.UserInfoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,9 @@ public class CouponService {
     
     @Autowired
     private UserCouponRepository userCouponRepository;
+    
+    @Autowired
+    private UserInfoRepository userInfoRepository;
     
     /**
      * 获取用户所有优惠券
@@ -93,10 +97,10 @@ public class CouponService {
      */
     @Transactional
     public boolean claimDailyCoupon(Integer userId) {
-        // 检查今天是否已经领取过
-        boolean hasClaimedToday = userCouponRepository.hasClaimedCouponToday(userId, "01");
-        if (hasClaimedToday) {
-            log.info("用户今天已经领取过每日优惠券: userId={}", userId);
+        // 检查用户今天是否已经登录过（使用latest_log字段判断）
+        boolean hasLoggedInToday = userInfoRepository.hasLoggedInToday(userId);
+        if (hasLoggedInToday) {
+            log.info("用户今天已经登录过，不能重复领取每日优惠券: userId={}", userId);
             return false;
         }
         
