@@ -63,4 +63,19 @@ public class AdminController {
             return Result.error(e.getMessage());
         }
     }
+
+    /**
+     * 删除管理员账号
+     */
+    @DeleteMapping("/delete/{adminId}")
+    public Result<String> deleteAdmin(@PathVariable String adminId, @RequestBody Map<String, String> request) {
+        try {
+            String operatorId = request.get("operatorId");
+            String result = adminService.deleteAdmin(adminId, operatorId);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("删除管理员失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
 }

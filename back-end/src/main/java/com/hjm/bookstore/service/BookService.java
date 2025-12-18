@@ -1,6 +1,8 @@
 package com.hjm.bookstore.service;
 
+import com.hjm.bookstore.dto.AdminBookSearchRequest;
 import com.hjm.bookstore.dto.BookSearchRequest;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.entity.BooksInfo;
 import com.hjm.bookstore.repository.BooksInfoRepository;
 import com.hjm.bookstore.utils.ExcelImportUtils;
@@ -9,6 +11,10 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,9 +72,76 @@ public class BookService {
     }
 
     /**
-     * 高级搜索
+     * 高级搜索（带分页）
      */
-    public List<BooksInfo> searchBooks(BookSearchRequest request) {
+    public PageResponse<BooksInfo> searchBooks(BookSearchRequest request) {
+        // 验证分页参数
+        request.validate();
+        
+        Specification<BooksInfo> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 只查询上架的书籍
+            predicates.add(cb.equal(root.get("status"), 1));
+
+            // 书名模糊查询
+            if (request.getBookName() != null && !request.getBookName().isEmpty()) {
+                predicates.add(cb.like(root.get("bookName"), "%" + request.getBookName() + "%"));
+            }
+
+            // 作者模糊查询
+            if (request.getAuthor() != null && !request.getAuthor().isEmpty()) {
+                predicates.add(cb.like(root.get("author"), "%" + request.getAuthor() + "%"));
+            }
+
+            // 分类查询
+            if (request.getCategories() != null && !request.getCategories().isEmpty()) {
+                predicates.add(root.get("category").in(request.getCategories()));
+            }
+
+            // 销量范围
+            if (request.getMinSales() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("sales"), request.getMinSales()));
+            }
+            if (request.getMaxSales() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("sales"), request.getMaxSales()));
+            }
+
+            // 价格范围
+            if (request.getMinPrice() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), request.getMinPrice()));
+            }
+            if (request.getMaxPrice() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), request.getMaxPrice()));
+            }
+
+            // 评分范围
+            if (request.getMinRating() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("rating"), request.getMinRating()));
+            }
+            if (request.getMaxRating() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("rating"), request.getMaxRating()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // 创建分页对象
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
+        
+        // 执行分页查询
+        Page<BooksInfo> page = booksInfoRepository.findAll(spec, pageable);
+        
+        // 为搜索结果设置实时评分
+        List<BooksInfo> booksWithRating = setRealTimeRatingsForBooks(page.getContent());
+        
+        return PageResponse.of(booksWithRating, request.getPage(), request.getSize(), page.getTotalElements());
+    }
+
+    /**
+     * 高级搜索（旧版本，保持兼容性）
+     */
+    public List<BooksInfo> searchBooksWithoutPagination(BookSearchRequest request) {
         Specification<BooksInfo> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -144,6 +217,64 @@ public class BookService {
 
         // 为搜索结果设置实时评分
         return setRealTimeRatingsForBooks(results);
+    }
+
+    /**
+     * 管理员获取书籍列表（带分页）
+     */
+    public PageResponse<BooksInfo> searchAdminBooks(AdminBookSearchRequest request) {
+        request.validate();
+        
+        // 构建查询条件
+        Specification<BooksInfo> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            
+            if (request.getBookName() != null && !request.getBookName().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("bookName"), "%" + request.getBookName() + "%"));
+            }
+            
+            if (request.getAuthor() != null && !request.getAuthor().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("author"), "%" + request.getAuthor() + "%"));
+            }
+            
+            if (request.getPublisher() != null && !request.getPublisher().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("publisher"), "%" + request.getPublisher() + "%"));
+            }
+            
+            if (request.getCategory() != null && !request.getCategory().trim().isEmpty()) {
+                predicates.add(cb.equal(root.get("category"), request.getCategory()));
+            }
+            
+            if (request.getMinPrice() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), request.getMinPrice()));
+            }
+            
+            if (request.getMaxPrice() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("price"), request.getMaxPrice()));
+            }
+            
+            if (request.getStatus() != null) {
+                predicates.add(cb.equal(root.get("status"), request.getStatus()));
+            }
+            
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        
+        // 构建排序
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (request.getSortBy() != null) {
+            Sort.Direction direction = "asc".equalsIgnoreCase(request.getSortOrder()) 
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+            sort = Sort.by(direction, request.getSortBy());
+        }
+        
+        // 创建分页对象
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+        
+        // 执行查询
+        Page<BooksInfo> page = booksInfoRepository.findAll(spec, pageable);
+        
+        return PageResponse.of(page.getContent(), request.getPage(), request.getSize(), page.getTotalElements());
     }
 
     /**

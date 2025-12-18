@@ -5,7 +5,39 @@
         <h1>我的订单</h1>
       </div>
 
-      <div v-if="orders.length > 0" class="orders-list">
+      <!-- 订单状态筛选 -->
+      <div class="filter-section">
+        <el-card>
+          <div class="filter-tabs">
+            <el-button 
+              :type="searchForm.orderStatus === null ? 'primary' : 'default'"
+              @click="handleStatusFilter('all')"
+            >
+              全部订单 ({{ statusCounts.all }})
+            </el-button>
+            <el-button 
+              :type="searchForm.orderStatus === 1 ? 'primary' : 'default'"
+              @click="handleStatusFilter(1)"
+            >
+              运送中 ({{ statusCounts.shipping }})
+            </el-button>
+            <el-button 
+              :type="searchForm.orderStatus === 2 ? 'primary' : 'default'"
+              @click="handleStatusFilter(2)"
+            >
+              已完成 ({{ statusCounts.completed }})
+            </el-button>
+            <el-button 
+              :type="searchForm.orderStatus === 0 ? 'primary' : 'default'"
+              @click="handleStatusFilter(0)"
+            >
+              已取消 ({{ statusCounts.cancelled }})
+            </el-button>
+          </div>
+        </el-card>
+      </div>
+
+      <div v-if="orders.length > 0" class="orders-list" v-loading="loading">
         <el-card v-for="order in orders" :key="order.orderId" class="order-card">
           <div class="order-header">
             <div class="order-info">
@@ -65,6 +97,22 @@
         </el-card>
       </div>
 
+      <!-- 分页组件 -->
+      <div v-if="orders.length > 0" class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          :prev-text="'上一页'"
+          :next-text="'下一页'"
+          :pager-count="7"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
+
       <el-empty v-else description="暂无订单记录">
         <el-button type="primary" @click="router.push('/user/home')">去购物</el-button>
       </el-empty>
@@ -83,15 +131,91 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const orders = ref([])
+const loading = ref(false)
+const pagination = ref({
+  page: 1,
+  size: 10,
+  total: 0,
+  totalPages: 0
+})
+const statusCounts = ref({
+  all: 0,
+  shipping: 0,  // 运送中
+  completed: 0, // 已完成
+  cancelled: 0  // 已取消
+})
+const searchForm = ref({
+  userId: null,
+  orderStatus: null,
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  size: 10
+})
 
 const loadOrders = async () => {
+  loading.value = true
   try {
-    const userId = userStore.userInfo.userId
-    const res = await orderAPI.getList(userId)
-    orders.value = res.data
+    searchForm.value.userId = userStore.userInfo.userId
+    const res = await orderAPI.search(searchForm.value)
+    orders.value = res.data.content
+    pagination.value = {
+      page: res.data.page,
+      size: res.data.size,
+      total: res.data.total,
+      totalPages: res.data.totalPages
+    }
   } catch (error) {
     console.error('加载订单失败', error)
+    ElMessage.error('加载订单失败')
+  } finally {
+    loading.value = false
   }
+}
+
+const loadStatusCounts = async () => {
+  try {
+    const userId = userStore.userInfo.userId
+    
+    // 获取各状态的订单数量
+    const allRequest = { userId, page: 1, size: 1 }
+    const shippingRequest = { userId, orderStatus: 1, page: 1, size: 1 }
+    const completedRequest = { userId, orderStatus: 2, page: 1, size: 1 }
+    const cancelledRequest = { userId, orderStatus: 0, page: 1, size: 1 }
+    
+    const [allRes, shippingRes, completedRes, cancelledRes] = await Promise.all([
+      orderAPI.search(allRequest),
+      orderAPI.search(shippingRequest),
+      orderAPI.search(completedRequest),
+      orderAPI.search(cancelledRequest)
+    ])
+    
+    statusCounts.value = {
+      all: allRes.data.total,
+      shipping: shippingRes.data.total,
+      completed: completedRes.data.total,
+      cancelled: cancelledRes.data.total
+    }
+  } catch (error) {
+    console.error('加载订单状态统计失败', error)
+  }
+}
+
+const handlePageChange = (page) => {
+  searchForm.value.page = page
+  loadOrders()
+}
+
+const handleSizeChange = (size) => {
+  searchForm.value.size = size
+  searchForm.value.page = 1
+  loadOrders()
+}
+
+const handleStatusFilter = (status) => {
+  searchForm.value.orderStatus = status === 'all' ? null : status
+  searchForm.value.page = 1
+  loadOrders()
 }
 
 const formatDate = (dateStr) => {
@@ -135,6 +259,7 @@ const handleCancelOrder = async (order) => {
     
     ElMessage.success('订单取消成功')
     loadOrders() // 重新加载订单列表
+    loadStatusCounts() // 重新加载状态统计
   } catch (error) {
     if (error !== 'cancel') {
       console.error('取消订单失败', error)
@@ -161,6 +286,7 @@ const handleReceiveOrder = async (order) => {
     
     ElMessage.success('签收成功')
     loadOrders() // 重新加载订单列表
+    loadStatusCounts() // 重新加载状态统计
   } catch (error) {
     if (error !== 'cancel') {
       console.error('签收失败', error)
@@ -171,6 +297,7 @@ const handleReceiveOrder = async (order) => {
 
 onMounted(() => {
   loadOrders()
+  loadStatusCounts()
 })
 </script>
 
@@ -187,6 +314,16 @@ onMounted(() => {
 .page-header h1 {
   font-size: 32px;
   color: #1f2937;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .orders-list {
@@ -319,5 +456,12 @@ onMounted(() => {
   gap: 8px;
   align-items: flex-end;
   min-width: 100px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  padding: 20px 0;
 }
 </style>

@@ -1,6 +1,8 @@
 package com.hjm.bookstore.service;
 
+import com.hjm.bookstore.dto.AdminCouponSearchRequest;
 import com.hjm.bookstore.dto.CouponResponse;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.entity.CouponType;
 import com.hjm.bookstore.entity.UserCoupon;
 import com.hjm.bookstore.repository.CouponTypeRepository;
@@ -8,6 +10,11 @@ import com.hjm.bookstore.repository.UserCouponRepository;
 import com.hjm.bookstore.repository.UserInfoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -224,6 +231,79 @@ public class CouponService {
                     return map;
                 })
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 管理员获取优惠券类型（带分页）
+     */
+    public PageResponse<Map<String, Object>> searchAdminCoupons(AdminCouponSearchRequest request) {
+        request.validate();
+        
+        // 构建查询条件
+        Specification<CouponType> spec = (root, query, cb) -> {
+            List<jakarta.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            
+            if (request.getCouponName() != null && !request.getCouponName().trim().isEmpty()) {
+                predicates.add(cb.like(root.get("couponName"), "%" + request.getCouponName() + "%"));
+            }
+            
+            if (request.getMinDiscountAmount() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("discountAmount"), request.getMinDiscountAmount()));
+            }
+            
+            if (request.getMaxDiscountAmount() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("discountAmount"), request.getMaxDiscountAmount()));
+            }
+            
+            if (request.getMinMinAmount() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("minAmount"), request.getMinMinAmount()));
+            }
+            
+            if (request.getMaxMinAmount() != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("minAmount"), request.getMaxMinAmount()));
+            }
+            
+            if (request.getValidDays() != null) {
+                predicates.add(cb.equal(root.get("validDays"), request.getValidDays()));
+            }
+            
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        
+        // 构建排序
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (request.getSortBy() != null) {
+            Sort.Direction direction = "asc".equalsIgnoreCase(request.getSortOrder()) 
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+            sort = Sort.by(direction, request.getSortBy());
+        }
+        
+        // 创建分页对象
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+        
+        // 执行查询
+        Page<CouponType> page = couponTypeRepository.findAll(spec, pageable);
+        
+        // 转换为返回格式
+        List<Map<String, Object>> content = page.getContent().stream()
+                .map(ct -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("couponId", ct.getCouponId());
+                    map.put("couponName", ct.getCouponName());
+                    map.put("discountAmount", ct.getDiscountAmount());
+                    map.put("minAmount", ct.getMinAmount());
+                    map.put("validDays", ct.getValidDays());
+                    map.put("createdAt", ct.getCreatedAt());
+                    
+                    // 统计该优惠券的发放数量
+                    long issuedCount = userCouponRepository.countByCouponId(ct.getCouponId());
+                    map.put("issuedCount", issuedCount);
+                    
+                    return map;
+                })
+                .collect(Collectors.toList());
+        
+        return PageResponse.of(content, request.getPage(), request.getSize(), page.getTotalElements());
     }
     
     /**

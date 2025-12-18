@@ -5,12 +5,18 @@ import com.hjm.bookstore.entity.ShoppingHist;
 import com.hjm.bookstore.entity.UserInfo;
 import com.hjm.bookstore.dto.OrderConfirmRequest;
 import com.hjm.bookstore.dto.OrderConfirmResponse;
+import com.hjm.bookstore.dto.OrderSearchRequest;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.repository.BooksInfoRepository;
 import com.hjm.bookstore.repository.ShoppingHistRepository;
 import com.hjm.bookstore.repository.UserInfoRepository;
 import com.hjm.bookstore.repository.UserAddressRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -119,7 +125,61 @@ public class OrderService {
     }
 
     /**
-     * 获取用户订单历史
+     * 获取用户订单历史（带分页）
+     */
+    public PageResponse<Map<String, Object>> getUserOrders(OrderSearchRequest request) {
+        // 验证分页参数
+        request.validate();
+        
+        // 构建排序
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        if (request.getSortBy() != null) {
+            Sort.Direction direction = "asc".equalsIgnoreCase(request.getSortOrder()) 
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+            sort = Sort.by(direction, request.getSortBy());
+        }
+        
+        // 创建分页对象
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), sort);
+        
+        // 查询订单
+        Page<ShoppingHist> orderPage;
+        if (request.getUserId() != null && request.getOrderStatus() != null) {
+            orderPage = shoppingHistRepository.findByUserIdAndOrderStatus(request.getUserId(), request.getOrderStatus(), pageable);
+        } else if (request.getUserId() != null) {
+            orderPage = shoppingHistRepository.findByUserId(request.getUserId(), pageable);
+        } else {
+            orderPage = shoppingHistRepository.findAll(pageable);
+        }
+        
+        // 转换为返回格式
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (ShoppingHist order : orderPage.getContent()) {
+            Optional<BooksInfo> bookOpt = booksInfoRepository.findById(order.getBookId());
+            if (bookOpt.isPresent()) {
+                BooksInfo book = bookOpt.get();
+                Map<String, Object> orderInfo = new HashMap<>();
+                orderInfo.put("orderId", order.getOrderId());
+                orderInfo.put("bookId", book.getBookId());
+                orderInfo.put("bookName", book.getBookName());
+                orderInfo.put("author", book.getAuthor());
+                orderInfo.put("bookImage", book.getBookImage());
+                orderInfo.put("quantity", order.getQuantity());
+                orderInfo.put("unitPrice", order.getUnitPrice());
+                orderInfo.put("totalPrice", order.getTotalPrice());
+                orderInfo.put("actualPay", order.getActualPay());
+                orderInfo.put("orderStatus", order.getOrderStatus());
+                orderInfo.put("address", order.getAddress() != null ? order.getAddress() : "无");
+                orderInfo.put("createdAt", order.getCreatedAt());
+                result.add(orderInfo);
+            }
+        }
+        
+        return PageResponse.of(result, request.getPage(), request.getSize(), orderPage.getTotalElements());
+    }
+
+    /**
+     * 获取用户订单历史（旧版本，保持兼容性）
      */
     public List<Map<String, Object>> getUserOrders(Integer userId) {
         List<ShoppingHist> orders = shoppingHistRepository.findByUserIdOrderByCreatedAtDesc(userId);

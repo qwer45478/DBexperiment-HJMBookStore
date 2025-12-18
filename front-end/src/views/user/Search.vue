@@ -75,7 +75,7 @@
       <!-- 搜索结果 -->
       <div class="search-results" v-if="searchResults.length > 0">
         <div class="results-header">
-          <h3>找到 {{ searchResults.length }} 本书籍</h3>
+          <h3>找到 {{ pagination.total }} 本书籍</h3>
         </div>
         <div class="book-grid">
           <div
@@ -105,6 +105,22 @@
             </div>
           </div>
         </div>
+
+        <!-- 分页组件 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :page-sizes="[12, 24, 48, 96]"
+            :total="pagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            :prev-text="'上一页'"
+            :next-text="'下一页'"
+            :pager-count="7"
+            @size-change="handleSizeChange"
+            @current-change="handlePageChange"
+          />
+        </div>
       </div>
 
       <!-- 无结果提示 -->
@@ -133,17 +149,31 @@ const searchForm = ref({
   minRating: null,
   maxRating: null,
   sortBy: 'sales',
-  sortOrder: 'desc'
+  sortOrder: 'desc',
+  page: 1,
+  size: 12
 })
 
 const books = ref([])
 const loading = ref(false)
+const pagination = ref({
+  page: 1,
+  size: 12,
+  total: 0,
+  totalPages: 0
+})
 
 const searchBooks = async () => {
   loading.value = true
   try {
     const res = await bookAPI.search(searchForm.value)
-    books.value = res.data
+    books.value = res.data.content
+    pagination.value = {
+      page: res.data.page,
+      size: res.data.size,
+      total: res.data.total,
+      totalPages: res.data.totalPages
+    }
   } catch (error) {
     ElMessage.error('搜索失败')
   } finally {
@@ -194,8 +224,21 @@ const handleReset = () => {
     minRating: null,
     maxRating: null,
     sortBy: 'sales',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
+    page: 1,
+    size: 12
   }
+  searchBooks()
+}
+
+const handlePageChange = (page) => {
+  searchForm.value.page = page
+  searchBooks()
+}
+
+const handleSizeChange = (size) => {
+  searchForm.value.size = size
+  searchForm.value.page = 1
   searchBooks()
 }
 
@@ -324,5 +367,12 @@ onMounted(() => {
   justify-content: space-between;
   font-size: 12px;
   color: #9ca3af;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+  padding: 20px 0;
 }
 </style>

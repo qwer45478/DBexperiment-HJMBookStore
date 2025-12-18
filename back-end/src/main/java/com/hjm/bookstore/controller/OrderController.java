@@ -3,6 +3,8 @@ package com.hjm.bookstore.controller;
 import com.hjm.bookstore.common.Result;
 import com.hjm.bookstore.dto.OrderConfirmRequest;
 import com.hjm.bookstore.dto.OrderConfirmResponse;
+import com.hjm.bookstore.dto.OrderSearchRequest;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.entity.ShoppingHist;
 import com.hjm.bookstore.service.OrderService;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +54,21 @@ public class OrderController {
     }
 
     /**
-     * 获取用户订单历史
+     * 获取用户订单历史（带分页）
+     */
+    @PostMapping("/search")
+    public Result<PageResponse<Map<String, Object>>> getUserOrders(@RequestBody OrderSearchRequest request) {
+        try {
+            PageResponse<Map<String, Object>> orders = orderService.getUserOrders(request);
+            return Result.success(orders);
+        } catch (Exception e) {
+            log.error("获取订单历史失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取用户订单历史（旧版本，保持兼容性）
      */
     @GetMapping("/{userId}")
     public Result<List<Map<String, Object>>> getUserOrders(@PathVariable Integer userId) {

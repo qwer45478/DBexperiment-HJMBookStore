@@ -8,6 +8,38 @@
       </el-button>
     </div>
 
+    <!-- 搜索表单 -->
+    <el-card style="margin-bottom: 20px;">
+      <el-form :model="searchForm" inline>
+        <el-form-item label="优惠券名称">
+          <el-input v-model="searchForm.couponName" placeholder="请输入优惠券名称" clearable style="width: 200px" />
+        </el-form-item>
+        <el-form-item label="优惠额度范围">
+          <el-input-number v-model="searchForm.minDiscountAmount" placeholder="最小" :min="1" style="width: 100px" />
+          <span style="margin: 0 8px;">-</span>
+          <el-input-number v-model="searchForm.maxDiscountAmount" placeholder="最大" :min="1" style="width: 100px" />
+        </el-form-item>
+        <el-form-item label="使用门槛范围">
+          <el-input-number v-model="searchForm.minMinAmount" placeholder="最小" :min="0" style="width: 100px" />
+          <span style="margin: 0 8px;">-</span>
+          <el-input-number v-model="searchForm.maxMinAmount" placeholder="最大" :min="0" style="width: 100px" />
+        </el-form-item>
+        <el-form-item label="有效期">
+          <el-select v-model="searchForm.validDays" placeholder="选择有效期" clearable style="width: 120px">
+            <el-option label="永久" :value="0" />
+            <el-option label="7天" :value="7" />
+            <el-option label="30天" :value="30" />
+            <el-option label="90天" :value="90" />
+            <el-option label="365天" :value="365" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <!-- 优惠券列表 -->
     <el-card>
       <el-table :data="coupons" stripe v-loading="loading">
@@ -50,6 +82,22 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          :prev-text="'上一页'"
+          :next-text="'下一页'"
+          :pager-count="7"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
     </el-card>
 
     <!-- 添加优惠券对话框 -->
@@ -150,6 +198,24 @@ import { couponAPI } from '@/api'
 
 const coupons = ref([])
 const loading = ref(false)
+const pagination = ref({
+  page: 1,
+  size: 10,
+  total: 0,
+  totalPages: 0
+})
+const searchForm = ref({
+  couponName: '',
+  minDiscountAmount: null,
+  maxDiscountAmount: null,
+  minMinAmount: null,
+  maxMinAmount: null,
+  validDays: null,
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  size: 10
+})
 const addDialogVisible = ref(false)
 const issueDialogVisible = ref(false)
 const selectedCoupon = ref(null)
@@ -204,14 +270,52 @@ const issueRules = {
 const loadCoupons = async () => {
   try {
     loading.value = true
-    const res = await couponAPI.getAdminTypes()
-    coupons.value = res.data
+    const res = await couponAPI.searchAdmin(searchForm.value)
+    coupons.value = res.data.content
+    pagination.value = {
+      page: res.data.page,
+      size: res.data.size,
+      total: res.data.total,
+      totalPages: res.data.totalPages
+    }
   } catch (error) {
     console.error('加载优惠券列表失败', error)
     ElMessage.error('加载优惠券列表失败')
   } finally {
     loading.value = false
   }
+}
+
+const handlePageChange = (page) => {
+  searchForm.value.page = page
+  loadCoupons()
+}
+
+const handleSizeChange = (size) => {
+  searchForm.value.size = size
+  searchForm.value.page = 1
+  loadCoupons()
+}
+
+const handleSearch = () => {
+  searchForm.value.page = 1
+  loadCoupons()
+}
+
+const handleReset = () => {
+  searchForm.value = {
+    couponName: '',
+    minDiscountAmount: null,
+    maxDiscountAmount: null,
+    minMinAmount: null,
+    maxMinAmount: null,
+    validDays: null,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    page: 1,
+    size: 10
+  }
+  loadCoupons()
 }
 
 const handleAdd = () => {
@@ -342,5 +446,12 @@ onMounted(() => {
 
 .el-form-item {
   margin-bottom: 20px;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 20px 0;
 }
 </style>

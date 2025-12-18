@@ -1,7 +1,9 @@
 package com.hjm.bookstore.controller;
 
 import com.hjm.bookstore.common.Result;
+import com.hjm.bookstore.dto.AdminCouponSearchRequest;
 import com.hjm.bookstore.dto.CouponResponse;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.service.CouponService;
 import com.hjm.bookstore.service.UserLevelService;
 import lombok.extern.slf4j.Slf4j;
@@ -153,6 +155,20 @@ public class CouponController {
             return Result.success(couponTypes);
         } catch (Exception e) {
             log.error("获取优惠券类型失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 管理员获取优惠券类型（带分页）
+     */
+    @PostMapping("/admin/search")
+    public Result<PageResponse<Map<String, Object>>> getAdminCouponTypesWithPagination(@RequestBody AdminCouponSearchRequest request) {
+        try {
+            PageResponse<Map<String, Object>> result = couponService.searchAdminCoupons(request);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取管理员优惠券列表失败", e);
             return Result.error(e.getMessage());
         }
     }

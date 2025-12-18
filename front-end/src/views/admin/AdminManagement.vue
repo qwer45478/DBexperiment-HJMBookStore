@@ -23,6 +23,18 @@
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="120" v-if="isLevel2Admin">
+          <template #default="{ row }">
+            <el-button 
+              type="danger" 
+              size="small" 
+              @click="handleDelete(row)"
+              :disabled="row.adminLevel === 2 || row.adminId === currentUserAdminId"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
 
@@ -65,10 +77,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminAPI } from '@/api'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const admins = ref([])
 const createDialogVisible = ref(false)
 const newAdminInfo = ref(null)
@@ -76,6 +90,12 @@ const newAdminInfo = ref(null)
 const adminForm = reactive({
   adminLevel: 1
 })
+
+// 计算属性：判断当前用户是否为2级管理员
+const isLevel2Admin = computed(() => userStore.userInfo?.adminLevel === 2)
+
+// 计算属性：获取当前管理员ID
+const currentUserAdminId = computed(() => userStore.userInfo?.adminId)
 
 const loadAdmins = async () => {
   try {
@@ -94,7 +114,7 @@ const handleCreate = () => {
 
 const handleConfirmCreate = async () => {
   try {
-    const res = await adminAPI.create(adminForm)
+    const res = await adminAPI.add(adminForm)
     newAdminInfo.value = res.data
     ElMessage.success('创建成功')
     loadAdmins()
@@ -103,8 +123,31 @@ const handleConfirmCreate = async () => {
   }
 }
 
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr)
+const handleDelete = async (admin) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除管理员"${admin.adminId}"吗？此操作不可撤销。`,
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await adminAPI.delete(admin.adminId, currentUserAdminId.value)
+    ElMessage.success('删除成功')
+    loadAdmins()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
   return date.toLocaleString('zh-CN')
 }
 

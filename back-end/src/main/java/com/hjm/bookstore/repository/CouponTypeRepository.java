@@ -2,6 +2,7 @@ package com.hjm.bookstore.repository;
 
 import com.hjm.bookstore.entity.CouponType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +14,7 @@ import java.util.Optional;
  * 优惠券类型数据访问接口
  */
 @Repository
-public interface CouponTypeRepository extends JpaRepository<CouponType, String> {
+public interface CouponTypeRepository extends JpaRepository<CouponType, String>, JpaSpecificationExecutor<CouponType> {
     
     /**
      * 根据优惠券ID查找优惠券
