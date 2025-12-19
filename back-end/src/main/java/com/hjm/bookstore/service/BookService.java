@@ -398,33 +398,26 @@ public class BookService {
     }
 
     /**
-     * 更新销量
+     * 更新销量（原子操作，防止超卖）
      */
     @Transactional
     public void updateSales(Integer bookId, Integer quantity) {
-        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
-        if (bookOpt.isPresent()) {
-            BooksInfo book = bookOpt.get();
-            book.setSales(book.getSales() + quantity);
-            book.setMonthlySales(book.getMonthlySales() + quantity);
-            book.setStock(book.getStock() - quantity);
-            booksInfoRepository.save(book);
+        int updatedRows = booksInfoRepository.decreaseStock(bookId, quantity);
+        if (updatedRows == 0) {
+            throw new RuntimeException("库存不足或书籍不存在");
         }
     }
     
     /**
-     * 恢复库存（取消订单时使用）
+     * 恢复库存（取消订单时使用，原子操作）
      */
     @Transactional
     public void restoreStock(Integer bookId, Integer quantity) {
-        Optional<BooksInfo> bookOpt = booksInfoRepository.findById(bookId);
-        if (bookOpt.isPresent()) {
-            BooksInfo book = bookOpt.get();
-            book.setStock(book.getStock() + quantity);
-            book.setSales(Math.max(0, book.getSales() - quantity));
-            book.setMonthlySales(Math.max(0, book.getMonthlySales() - quantity));
-            booksInfoRepository.save(book);
+        int updatedRows = booksInfoRepository.increaseStock(bookId, quantity);
+        if (updatedRows > 0) {
             log.info("恢复库存成功: 书籍{} 数量{}", bookId, quantity);
+        } else {
+            log.warn("恢复库存失败: 书籍{} 不存在", bookId);
         }
     }
 

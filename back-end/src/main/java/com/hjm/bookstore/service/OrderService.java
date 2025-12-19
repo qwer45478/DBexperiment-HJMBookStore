@@ -89,13 +89,14 @@ public class OrderService {
         order.setQuantity(quantity);
         order.setUnitPrice(book.getPrice());
         order.setTotalPrice(book.getPrice().multiply(new BigDecimal(quantity)));
+        order.setActualPay(order.getTotalPrice()); // 默认实付金额等于总价
         order.setOrderStatus(1); // 1-运送中
-        order.setAddress(null); // 单个购买时地址为空，需要从订单确认页面传入
+        order.setAddress("默认地址"); // 单个购买时地址为空，需要从订单确认页面传入
+
+        // 更新书籍销量和库存（先更新库存，获取行锁，避免死锁）
+        bookService.updateSales(bookId, quantity);
 
         ShoppingHist savedOrder = shoppingHistRepository.save(order);
-
-        // 更新书籍销量和库存
-        bookService.updateSales(bookId, quantity);
 
         // 更新用户消费金额和等级
         UserInfo user = userOpt.get();
@@ -381,11 +382,11 @@ public class OrderService {
             order.setOrderStatus(1); // 1-运送中
             order.setAddress(request.getAddress());
             
+            // 更新书籍销量和库存（先更新库存，获取行锁，避免死锁）
+            bookService.updateSales(item.getBookId(), item.getQuantity());
+
             ShoppingHist savedOrder = shoppingHistRepository.save(order);
             orders.add(savedOrder);
-            
-            // 更新书籍销量和库存
-            bookService.updateSales(item.getBookId(), item.getQuantity());
         }
         
         // 更新用户消费金额和等级（使用实际支付金额总和）
