@@ -1,6 +1,7 @@
 package com.hjm.bookstore.dto;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -8,7 +9,8 @@ import java.util.List;
  * 书籍搜索请求DTO
  */
 @Data
-public class BookSearchRequest {
+@EqualsAndHashCode(callSuper = true)
+public class BookSearchRequest extends PageRequest {
     
     private String bookName;
     private String author;

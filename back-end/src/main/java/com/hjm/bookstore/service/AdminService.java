@@ -100,6 +100,46 @@ public class AdminService {
     }
 
     /**
+     * 删除管理员账号
+     */
+    @Transactional
+    public String deleteAdmin(String targetAdminId, String operatorId) {
+        // 验证参数
+        if (targetAdminId == null || operatorId == null) {
+            throw new IllegalArgumentException("参数不能为空");
+        }
+
+        // 查找操作者（当前登录的管理员）
+        Optional<AdminInfo> operatorOpt = adminInfoRepository.findByAdminId(operatorId);
+        AdminInfo operator = operatorOpt.orElseThrow(() -> new IllegalArgumentException("操作者不存在"));
+
+        // 查找目标管理员
+        Optional<AdminInfo> targetOpt = adminInfoRepository.findByAdminId(targetAdminId);
+        AdminInfo target = targetOpt.orElseThrow(() -> new IllegalArgumentException("目标管理员不存在"));
+
+        // 权限检查：只有2级管理员可以删除1级管理员
+        if (operator.getAdminLevel() != 2) {
+            throw new IllegalArgumentException("只有超级管理员才能删除其他管理员");
+        }
+
+        // 不能删除自己
+        if (targetAdminId.equals(operatorId)) {
+            throw new IllegalArgumentException("不能删除自己的账号");
+        }
+
+        // 只能删除1级管理员
+        if (target.getAdminLevel() != 1) {
+            throw new IllegalArgumentException("只能删除普通管理员（1级）");
+        }
+
+        // 执行删除
+        adminInfoRepository.delete(target);
+
+        log.info("管理员删除成功: 操作者={}, 被删除管理员={}", operatorId, targetAdminId);
+        return "管理员删除成功";
+    }
+
+    /**
      * 生成8位管理员ID
      */
     private String generateAdminId() {

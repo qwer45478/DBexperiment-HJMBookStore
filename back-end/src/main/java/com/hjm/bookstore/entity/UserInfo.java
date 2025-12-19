@@ -43,6 +43,9 @@ public class UserInfo {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @Column(name = "latest_log")
+    private LocalDateTime latestLog;
+    
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

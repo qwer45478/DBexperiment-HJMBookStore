@@ -1,6 +1,8 @@
 package com.hjm.bookstore.repository;
 
 import com.hjm.bookstore.entity.ShoppingHist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,6 +20,16 @@ public interface ShoppingHistRepository extends JpaRepository<ShoppingHist, Long
      * 根据用户ID查询订单历史
      */
     List<ShoppingHist> findByUserIdOrderByCreatedAtDesc(Integer userId);
+    
+    /**
+     * 根据用户ID分页查询订单历史
+     */
+    Page<ShoppingHist> findByUserId(Integer userId, Pageable pageable);
+    
+    /**
+     * 根据用户ID和订单状态分页查询订单历史
+     */
+    Page<ShoppingHist> findByUserIdAndOrderStatus(Integer userId, Integer orderStatus, Pageable pageable);
     
     /**
      * 查询指定时间范围内的订单

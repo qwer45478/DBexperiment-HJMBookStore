@@ -22,9 +22,39 @@
       </div>
     </div>
 
+    <!-- 搜索表单 -->
+    <el-card style="margin-bottom: 20px;">
+      <el-form :model="searchForm" inline>
+        <el-form-item label="书名">
+          <el-input v-model="searchForm.bookName" placeholder="请输入书名" clearable style="width: 200px" />
+        </el-form-item>
+        <el-form-item label="作者">
+          <el-input v-model="searchForm.author" placeholder="请输入作者" clearable style="width: 200px" />
+        </el-form-item>
+        <el-form-item label="出版社">
+          <el-input v-model="searchForm.publisher" placeholder="请输入出版社" clearable style="width: 200px" />
+        </el-form-item>
+        <el-form-item label="分类">
+          <el-select v-model="searchForm.category" placeholder="选择分类" clearable style="width: 200px">
+            <el-option v-for="cat in categories" :key="cat.value" :label="cat.label" :value="cat.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="searchForm.status" placeholder="选择状态" clearable style="width: 120px">
+            <el-option label="上架" :value="1" />
+            <el-option label="下架" :value="0" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="handleReset">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <!-- 书籍列表 -->
     <el-card>
-      <el-table :data="books" @selection-change="handleSelectionChange" stripe>
+      <el-table :data="books" @selection-change="handleSelectionChange" stripe v-loading="loading">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="bookId" label="ID" width="80" />
         <el-table-column label="封面" width="100">
@@ -65,6 +95,22 @@
           </template>
         </el-table-column>
       </el-table>
+
+      <!-- 分页组件 -->
+      <div class="pagination-wrapper">
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="pagination.total"
+          layout="total, sizes, prev, pager, next, jumper"
+          :prev-text="'上一页'"
+          :next-text="'下一页'"
+          :pager-count="7"
+          @size-change="handleSizeChange"
+          @current-change="handlePageChange"
+        />
+      </div>
     </el-card>
 
     <!-- 添加/编辑书籍对话框 -->
@@ -205,6 +251,26 @@ import { bookAPI } from '@/api'
 
 const books = ref([])
 const selectedBooks = ref([])
+const loading = ref(false)
+const pagination = ref({
+  page: 1,
+  size: 10,
+  total: 0,
+  totalPages: 0
+})
+const searchForm = ref({
+  bookName: '',
+  author: '',
+  publisher: '',
+  category: '',
+  minPrice: null,
+  maxPrice: null,
+  status: null,
+  sortBy: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  size: 10
+})
 const addDialogVisible = ref(false)
 const editMode = ref(false)
 const imageUpload = ref(null)
@@ -256,12 +322,55 @@ const categories = [
 ]
 
 const loadBooks = async () => {
+  loading.value = true
   try {
-    const res = await bookAPI.getList()
-    books.value = res.data
+    const res = await bookAPI.searchAdmin(searchForm.value)
+    books.value = res.data.content
+    pagination.value = {
+      page: res.data.page,
+      size: res.data.size,
+      total: res.data.total,
+      totalPages: res.data.totalPages
+    }
   } catch (error) {
     console.error('加载书籍失败', error)
+    ElMessage.error('加载书籍失败')
+  } finally {
+    loading.value = false
   }
+}
+
+const handlePageChange = (page) => {
+  searchForm.value.page = page
+  loadBooks()
+}
+
+const handleSizeChange = (size) => {
+  searchForm.value.size = size
+  searchForm.value.page = 1
+  loadBooks()
+}
+
+const handleSearch = () => {
+  searchForm.value.page = 1
+  loadBooks()
+}
+
+const handleReset = () => {
+  searchForm.value = {
+    bookName: '',
+    author: '',
+    publisher: '',
+    category: '',
+    minPrice: null,
+    maxPrice: null,
+    status: null,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    page: 1,
+    size: 10
+  }
+  loadBooks()
 }
 
 const handleSelectionChange = (selection) => {
@@ -615,5 +724,12 @@ onMounted(() => {
 
 .error-item:last-child {
   margin-bottom: 0;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 20px 0;
 }
 </style>

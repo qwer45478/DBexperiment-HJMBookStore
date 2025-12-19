@@ -87,9 +87,7 @@
           </div>
         </div>
         
-        <el-empty v-else description="暂无优惠券">
-          <el-button type="primary" @click="claimDailyCoupon">领取每日优惠券</el-button>
-        </el-empty>
+        <el-empty v-else description="暂无优惠券" />
       </el-card>
     </div>
   </div>
@@ -99,7 +97,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { couponAPI, userLevelAPI } from '@/api'
+import { couponAPI } from '@/api'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -108,7 +106,6 @@ const userStore = useUserStore()
 const coupons = ref([])
 const statusFilter = ref('')
 const sortBy = ref('obtained')
-const claimingDaily = ref(false)
 
 // 计算统计数据
 const totalCoupons = computed(() => coupons.value.length)
@@ -166,34 +163,6 @@ const loadCoupons = async () => {
   } catch (error) {
     console.error('加载优惠券失败', error)
     ElMessage.error('加载优惠券失败')
-  }
-}
-
-// 领取每日优惠券
-const claimDailyCoupon = async () => {
-  try {
-    claimingDaily.value = true
-    
-    // 检查用户等级
-    const levelRes = await userLevelAPI.getInfo(userStore.userInfo.userId)
-    const userLevel = levelRes.data.userLevel
-    
-    if (userLevel < 5) {
-      ElMessage.warning('只有钻石会员才能领取每日优惠券')
-      return
-    }
-    
-    const res = await couponAPI.claimDaily({
-      userId: userStore.userInfo.userId
-    })
-    
-    ElMessage.success(res.message || '领取成功')
-    loadCoupons()
-  } catch (error) {
-    console.error('领取每日优惠券失败', error)
-    ElMessage.error(error.message || '领取失败')
-  } finally {
-    claimingDaily.value = false
   }
 }
 

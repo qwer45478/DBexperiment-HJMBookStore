@@ -48,6 +48,7 @@ export const bookAPI = {
   getList: () => request.get('/books/list'),
   getById: (id) => request.get(`/books/${id}`),
   search: (data) => request.post('/books/search', data),
+  searchAdmin: (data) => request.post('/books/admin/search', data),
   getRankings: () => request.get('/books/rankings'),
   getRecommendations: (userId) => request.get(`/books/recommend/${userId}`),
   save: (data) => request.post('/books/save', data),
@@ -102,6 +103,7 @@ export const cartAPI = {
 export const orderAPI = {
   create: (data) => request.post('/orders/create', data),
   getList: (userId) => request.get(`/orders/${userId}`),
+  search: (data) => request.post('/orders/search', data),
   getStatistics: () => request.get('/orders/statistics'),
   prepareConfirm: (data) => request.post('/orders/confirm', data),
   createConfirmed: (data) => request.post('/orders/create-confirmed', data),
@@ -136,8 +138,10 @@ export const carouselAPI = {
 export const adminAPI = {
   login: (data) => request.post('/auth/admin/login', data),
   getList: () => request.get('/admin/list'),
-  add: (data) => request.post('/admin/add', data),
-  remove: (id) => request.delete(`/admin/remove/${id}`),
+  add: (data) => request.post('/admin/create', data),
+  delete: (adminId, operatorId) => request.delete(`/admin/delete/${adminId}`, { 
+    data: { operatorId } 
+  }),
   changePassword: (data) => request.put('/admin/change-password', data)
 }
 
@@ -146,13 +150,14 @@ export const couponAPI = {
   getUserCoupons: (userId) => request.get(`/coupons/user/${userId}`),
   claim: (data) => request.post('/coupons/claim', data),
   claimDaily: (data) => request.post('/coupons/daily', data),
-  getAvailable: (userId, orderAmount) => request.get(`/coupons/available/${userId}`, { 
-    params: orderAmount ? { orderAmount } : {} 
-  }),
+  getAvailable: (userId, orderAmount) => request.get(`/coupons/available/${userId}`, { params: { orderAmount } }),
   getExpiring: (userId) => request.get(`/coupons/expiring/${userId}`),
-  calculateDiscount: (couponId, orderAmount) => request.get('/coupons/calculate-discount', {
-    params: { couponId, orderAmount }
-  })
+  calculateDiscount: (couponId, orderAmount) => request.get('/coupons/calculate-discount', { params: { couponId, orderAmount } }),
+  getAdminTypes: () => request.get('/coupons/admin/types'),
+  searchAdmin: (data) => request.post('/coupons/admin/search', data),
+  addAdminType: (data) => request.post('/coupons/admin/types', data),
+  deleteAdminType: (couponId) => request.delete(`/coupons/admin/types/${couponId}`),
+  issueCoupons: (data) => request.post('/coupons/admin/issue', data)
 }
 
 // 用户等级相关API

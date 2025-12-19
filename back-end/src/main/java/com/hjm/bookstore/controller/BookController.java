@@ -1,7 +1,9 @@
 package com.hjm.bookstore.controller;
 
 import com.hjm.bookstore.common.Result;
+import com.hjm.bookstore.dto.AdminBookSearchRequest;
 import com.hjm.bookstore.dto.BookSearchRequest;
+import com.hjm.bookstore.dto.PageResponse;
 import com.hjm.bookstore.entity.BooksInfo;
 import com.hjm.bookstore.service.BookService;
 import com.hjm.bookstore.service.RecommendationService;
@@ -53,6 +55,20 @@ public class BookController {
     }
 
     /**
+     * 管理员获取书籍列表（带分页）
+     */
+    @PostMapping("/admin/search")
+    public Result<PageResponse<BooksInfo>> getAdminBooksWithPagination(@RequestBody AdminBookSearchRequest request) {
+        try {
+            PageResponse<BooksInfo> result = bookService.searchAdminBooks(request);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取管理员书籍列表失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
      * 根据ID获取书籍详情
      */
     @GetMapping("/{id}")
@@ -68,12 +84,26 @@ public class BookController {
     }
 
     /**
-     * 搜索书籍
+     * 搜索书籍（带分页）
      */
     @PostMapping("/search")
-    public Result<List<BooksInfo>> searchBooks(@RequestBody BookSearchRequest request) {
+    public Result<PageResponse<BooksInfo>> searchBooks(@RequestBody BookSearchRequest request) {
         try {
-            List<BooksInfo> books = bookService.searchBooks(request);
+            PageResponse<BooksInfo> result = bookService.searchBooks(request);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("搜索书籍失败", e);
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 搜索书籍（旧版本，保持兼容性）
+     */
+    @PostMapping("/search/all")
+    public Result<List<BooksInfo>> searchBooksWithoutPagination(@RequestBody BookSearchRequest request) {
+        try {
+            List<BooksInfo> books = bookService.searchBooksWithoutPagination(request);
             return Result.success(books);
         } catch (Exception e) {
             log.error("搜索书籍失败", e);

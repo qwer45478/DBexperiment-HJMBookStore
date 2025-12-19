@@ -79,6 +79,11 @@ const routes = [
         component: () => import('@/views/admin/BookManagement.vue')
       },
       {
+        path: 'coupons',
+        name: 'CouponManagement',
+        component: () => import('@/views/admin/CouponManagement.vue')
+      },
+      {
         path: 'carousel',
         name: 'CarouselManagement',
         component: () => import('@/views/admin/CarouselManagement.vue')

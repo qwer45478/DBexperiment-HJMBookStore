@@ -89,7 +89,7 @@ public class AuthService {
             throw new RuntimeException("密码错误");
         }
 
-        // 5级用户自动领取每日优惠券
+        // 5级用户自动领取每日优惠券（先判断是否应该下发）
         if (user.getUserLevel() >= 5) {
             try {
                 boolean claimed = couponService.claimDailyCoupon(user.getUserId());
@@ -101,6 +101,9 @@ public class AuthService {
                 // 不影响登录流程，只记录警告日志
             }
         }
+
+        // 记录登录时间（在判断优惠券领取之后）
+        userInfoRepository.updateLatestLog(user.getUserId());
 
         // 生成Token
         String token = jwtUtil.generateToken(user.getUserId().toString(), "user");

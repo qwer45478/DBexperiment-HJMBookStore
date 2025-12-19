@@ -37,6 +37,9 @@ public class ShoppingHist {
     @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
     
+    @Column(name = "actual_pay", nullable = false, precision = 10, scale = 2)
+    private BigDecimal actualPay;
+    
     @Column(name = "address", length = 500)
     private String address;
     

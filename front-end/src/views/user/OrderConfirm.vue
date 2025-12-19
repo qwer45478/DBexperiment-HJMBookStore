@@ -254,6 +254,8 @@ const loadUserAddresses = async () => {
 // 选择地址
 const selectAddress = (address) => {
   tempAddress.value = address
+  // 立即更新selectedAddress以显示选中状态
+  selectedAddress.value = address
 }
 
 // 确认地址选择
@@ -267,7 +269,14 @@ const confirmAddress = () => {
 // 选择优惠券
 const selectCoupon = (coupon) => {
   if (coupon.isUsable) {
-    tempCoupon.value = tempCoupon.value?.couponId === coupon.couponId ? null : coupon
+    if (tempCoupon.value?.couponId === coupon.couponId) {
+      tempCoupon.value = null
+      selectedCoupon.value = null
+    } else {
+      tempCoupon.value = coupon
+      // 立即更新selectedCoupon以显示选中状态
+      selectedCoupon.value = coupon
+    }
   }
 }
 
