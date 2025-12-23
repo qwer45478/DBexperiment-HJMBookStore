@@ -73,6 +73,7 @@
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -88,6 +89,68 @@ const handleCommand = (command) => {
     router.push('/login')
   }
 }
+
+// Initialize Dify Chatbot
+onMounted(() => {
+  // Dify Chatbot Configuration
+  window.difyChatbotConfig = {
+    token: 'r3uNoJ8Ozn3dyzUF',
+    isDev: false,
+    baseUrl: 'https://udify.app',
+    inputs: {
+      // You can define the inputs from the Start node here
+      // key is the variable name
+      // e.g.
+      // name: "NAME"
+    },
+    systemVariables: {
+      // user_id: 'YOU CAN DEFINE USER ID HERE',
+      // conversation_id: 'YOU CAN DEFINE CONVERSATION ID HERE, IT MUST BE A VALID UUID',
+    },
+    userVariables: {
+      // avatar_url: 'YOU CAN DEFINE USER AVATAR URL HERE',
+      // name: 'YOU CAN DEFINE USER NAME HERE',
+    },
+  }
+
+  // Create and append the script tag for Dify Chatbot
+  const script = document.createElement('script')
+  script.src = 'https://udify.app/embed.min.js'
+  script.id = 'r3uNoJ8Ozn3dyzUF'
+  script.defer = true
+  
+  // Add error handling
+  script.onload = () => {
+    console.log('Dify chatbot script loaded successfully')
+  }
+  
+  script.onerror = (error) => {
+    console.error('Failed to load Dify chatbot script:', error)
+  }
+  
+  document.head.appendChild(script)
+
+  // Add custom styles for the chatbot
+  const style = document.createElement('style')
+  style.textContent = `
+    #dify-chatbot-bubble-button {
+      background-color: #1C64F2 !important;
+      position: fixed !important;
+      right: 20px !important;
+      bottom: 20px !important;
+      z-index: 9999 !important;
+    }
+    #dify-chatbot-bubble-window {
+      position: fixed !important;
+      right: 20px !important;
+      bottom: 80px !important;
+      width: 24rem !important;
+      height: 40rem !important;
+      z-index: 9999 !important;
+    }
+  `
+  document.head.appendChild(style)
+})
 </script>
 
 <style scoped>
