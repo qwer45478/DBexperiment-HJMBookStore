@@ -90,13 +90,11 @@ const handleCommand = (command) => {
   }
 }
 
-// Initialize Dify Chatbot
+// 加载智能体服务
 onMounted(() => {
-  // Dify Chatbot Configuration
+  // 配置智能体
   window.difyChatbotConfig = {
     token: 'r3uNoJ8Ozn3dyzUF',
-    isDev: false,
-    baseUrl: 'https://udify.app',
     inputs: {
       // You can define the inputs from the Start node here
       // key is the variable name
@@ -113,43 +111,12 @@ onMounted(() => {
     },
   }
 
-  // Create and append the script tag for Dify Chatbot
+  // 创建智能体脚本
   const script = document.createElement('script')
   script.src = 'https://udify.app/embed.min.js'
   script.id = 'r3uNoJ8Ozn3dyzUF'
   script.defer = true
-  
-  // Add error handling
-  script.onload = () => {
-    console.log('Dify chatbot script loaded successfully')
-  }
-  
-  script.onerror = (error) => {
-    console.error('Failed to load Dify chatbot script:', error)
-  }
-  
   document.head.appendChild(script)
-
-  // Add custom styles for the chatbot
-  const style = document.createElement('style')
-  style.textContent = `
-    #dify-chatbot-bubble-button {
-      background-color: #1C64F2 !important;
-      position: fixed !important;
-      right: 20px !important;
-      bottom: 20px !important;
-      z-index: 9999 !important;
-    }
-    #dify-chatbot-bubble-window {
-      position: fixed !important;
-      right: 20px !important;
-      bottom: 80px !important;
-      width: 24rem !important;
-      height: 40rem !important;
-      z-index: 9999 !important;
-    }
-  `
-  document.head.appendChild(style)
 })
 </script>
 
@@ -251,5 +218,25 @@ onMounted(() => {
 .footer p {
   margin: 0;
   opacity: 0.8;
+}
+</style>
+
+<style>
+/* 智能体服务样式 - 全局作用域 */
+#dify-chatbot-bubble-button {
+  background-color: #1C64F2 !important;
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+}
+
+#dify-chatbot-bubble-window {
+  width: 24rem !important;
+  height: 40rem !important;
+  position: fixed !important;
+  bottom: 80px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
 }
 </style>
